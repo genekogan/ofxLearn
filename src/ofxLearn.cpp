@@ -4,47 +4,56 @@
 ofxLearn::ofxLearn() {
     numInstances = 0;
     isTrained = false;
-        
     svm_trainer.set_kernel(kernel_type(0.0001));
     svm_trainer.set_lambda(0.0001);
-    
     trainer.set_trainer(svm_trainer);  
-    
 }
 
 //--------------------------------------------------------------
-void ofxLearn::initialize(int mode) {
-    switch (mode) {
-        case 1:
-            cout << "classification" <<endl;
-            break;
-        case 2:
-            cout << "regression" <<endl;
-            break;        
-        case 3:
-            cout << "clustering" <<endl;
-            break;
-    }
-}
-
-    
-//--------------------------------------------------------------
-void ofxLearn::addTrainingInstance(vector<double> instance, int label) {
+void ofxLearn::addTrainingInstance(vector<double> instance) {
     sample_type samp;
     for (int i = 0; i < instance.size(); i++)
         samp(i) = instance[i];    
     samples.push_back(samp);
-    labels.push_back(label);
-    numInstances++;
+    numInstances++;    
 }
 
 //--------------------------------------------------------------
-void ofxLearn::trainModel() {    
+void ofxLearn::addTrainingInstance(vector<double> instance, int label) {
+    addTrainingInstance(instance);
+    labels.push_back(label);
+}
+
+//--------------------------------------------------------------
+void ofxLearn::trainClassifier() {    
     cout << "beginning to train model... ";
     randomize_samples(samples, labels);
     decision_function = trainer.train(samples, labels);
     isTrained = true;
     cout << " finished training model, ready to use." << endl;
+}
+
+//--------------------------------------------------------------
+void ofxLearn::trainRegressor() {    
+    cout << "beginning to train model... ";
+    // tbd <-- regression model
+    cout << " finished training model, ready to use." << endl;
+}
+
+//--------------------------------------------------------------
+vector<int> ofxLearn::findClusters(int k) {
+    cout << "Running kmeans clustering... this could take a few moments... " << endl;
+    vector<sample_type> initial_centers;
+    dlib::kcentroid<kernel_type> kc(kernel_type(0.00001), 0.00001, 64);
+    dlib::kkmeans<kernel_type> kmeans(kc);    
+    kmeans.set_number_of_centers(k);
+    pick_initial_centers(k, initial_centers, samples, kmeans.get_kernel());
+    kmeans.train(samples,initial_centers);
+    vector<int> clusters;
+    for (int i = 0; i < samples.size(); ++i)
+        clusters.push_back(kmeans(samples[i]));
+    cout << "Finished clustering!" << endl;
+    return clusters;
 }
 
 //--------------------------------------------------------------
@@ -54,7 +63,7 @@ void ofxLearn::clearTrainingSet() {
 }
 
 //--------------------------------------------------------------
-void ofxLearn::optimize() {
+void ofxLearn::optimizeClassifier() {
     cout << "optimizing via cross validation. this may take a while... " << endl;
     for (double gamma = 0.00001; gamma <= 1; gamma *= 10)
     {
@@ -70,7 +79,8 @@ void ofxLearn::optimize() {
         }
     }
     
-    /*
+    // normalize?
+    /* 
     dlib::vector_normalizer<sample_type> normalizer;
     normalizer.train(samples);
     for (unsigned long i = 0; i < samples.size(); ++i)
@@ -113,8 +123,10 @@ void ofxLearn::loadModel(string filename) {
 
 //--------------------------------------------------------------
 void ofxLearn::saveDataset(string filename) {
+    //tbd
 }
 
 //--------------------------------------------------------------
 void ofxLearn::loadDataset(string filename) {
+    //tbd
 }

@@ -36,6 +36,16 @@ void testApp::draw() {
             ofDrawBitmapString("Prediction for this instance: class" + ofToString(lastLabel), 555, 30);
         maker.drawInstanceFromPointArray(instance, 550, 50, 300, 300);
     }   
+    
+    // Instructions
+    ofDrawBitmapString("INSTRUCTIONS:", 55, 400);
+    ofDrawBitmapString("1) Click spacebar to begin recording your mouse motion.", 55, 420);
+    ofDrawBitmapString("2) While recording, click any number key to assign that gesture to that class:", 55, 440);
+    ofDrawBitmapString("3) Try to record at least 10 examples for each class", 55, 460);
+    ofDrawBitmapString("4) Click 't' to train model (may take a minute)", 55, 480);
+    ofDrawBitmapString("5) When model is trained, try applying model to new example by", 55, 500);
+    ofDrawBitmapString("   by recording a new example and clicking 'c'", 55, 520);
+    
 }
 
 //--------------------------------------------------------------
@@ -47,6 +57,7 @@ void testApp::keyPressed(int key){
             lastLabel = key - 48;        // training label is between 1 and 9
             instance = maker.createInstanceFromPointArray(points);
             classifier.addTrainingInstance(instance, lastLabel);
+            //classifier.addTrainingInstance(instance);
             points.clear();
             isCreatingInstance = false;
             lastInstanceIsTraining = true;
@@ -67,10 +78,10 @@ void testApp::keyPressed(int key){
         isCreatingInstance = true;
     // train model
     else if (key=='t')
-        classifier.trainModel();
+        classifier.trainClassifier();
     // find optimal parameters
     else if (key=='o')
-        classifier.optimize();
+        classifier.optimizeClassifier();
     // save model to disk
     else if (key=='s')
         classifier.saveModel("data/df.dat");
