@@ -1,3 +1,6 @@
+
+#define NUMFEATURES 64
+
 #include "testApp.h"
 #include "ofAppGlutWindow.h"
 

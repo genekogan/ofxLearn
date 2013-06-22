@@ -23,7 +23,7 @@ void testApp::draw() {
     
     if (isCreatingInstance) {
         ofPushStyle();
-        ofSetColor(255,0,0);
+        ofSetColor(255, 0, 0);
         ofCircle(60, 75, 5);
         ofPopStyle();
         ofDrawBitmapString("Recording new instance...", 70, 80);
@@ -50,14 +50,12 @@ void testApp::draw() {
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
-    
     // add an instance to training set
     if (key > 48 && key < 58) {
         if (isCreatingInstance) {
             lastLabel = key - 48;        // training label is between 1 and 9
             instance = maker.createInstanceFromPointArray(points);
             classifier.addTrainingInstance(instance, lastLabel);
-            //classifier.addTrainingInstance(instance);
             points.clear();
             isCreatingInstance = false;
             lastInstanceIsTraining = true;
@@ -138,7 +136,7 @@ ofxGraphicsFeatureMaker::ofxGraphicsFeatureMaker() {
     fbo.allocate(ofGetWidth(), ofGetHeight(), GL_RGB);
     fboPixels.allocate(ofGetWidth(), ofGetHeight(), OF_IMAGE_COLOR);
     hop = 0.25;
-    n = 8;
+    n = 6;
 }
 
 //--------------------------------------------------------------

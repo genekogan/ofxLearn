@@ -1,9 +1,10 @@
 #pragma once
 
+
 #include "ofMain.h"
 #include "dlib/svm.h"
 
-typedef dlib::matrix<double, 64, 1> sample_type;
+typedef dlib::matrix<double, 0, 1> sample_type;
 typedef dlib::radial_basis_kernel<sample_type> kernel_type;
 typedef dlib::krr_trainer<kernel_type> binary_trainer_type;
 typedef dlib::one_vs_one_trainer<dlib::any_trainer<sample_type> > ovo_trainer;
@@ -26,10 +27,11 @@ public:
     void                loadModel(string filename);
     void                saveDataset(string filename);
     void                loadDataset(string filename);
-        
+    
     bool                isTrained;
-
+    
 protected:
+    int                 numFeatures;
     vector<sample_type> samples;
     vector<double>      labels;
     binary_trainer_type svm_trainer;
@@ -38,7 +40,7 @@ protected:
     int                 numInstances;
     
     int                 mode;
-
+    
 };
 
 

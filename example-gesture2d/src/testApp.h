@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxLearn.h"
 
+
 class ofxGraphicsFeatureMaker {
 public:
     ofxGraphicsFeatureMaker();
@@ -53,7 +54,7 @@ public:
  regression
  clustering
  opencv hand-tracking example
- typedef issue
+ leapmotion example
  --
  tutorials
  readme

@@ -11,11 +11,11 @@ ofxLearn::ofxLearn() {
 
 //--------------------------------------------------------------
 void ofxLearn::addTrainingInstance(vector<double> instance) {
-    sample_type samp;
+    sample_type samp(instance.size());
     for (int i = 0; i < instance.size(); i++)
         samp(i) = instance[i];    
     samples.push_back(samp);
-    numInstances++;    
+    numInstances++;
 }
 
 //--------------------------------------------------------------
@@ -25,7 +25,7 @@ void ofxLearn::addTrainingInstance(vector<double> instance, int label) {
 }
 
 //--------------------------------------------------------------
-void ofxLearn::trainClassifier() {    
+void ofxLearn::trainClassifier() {
     cout << "beginning to train model... ";
     randomize_samples(samples, labels);
     decision_function = trainer.train(samples, labels);
@@ -71,7 +71,7 @@ void ofxLearn::optimizeClassifier() {
         {
             svm_trainer.set_kernel(kernel_type(gamma));
             svm_trainer.set_lambda(lambda);
-   
+            
             const dlib::matrix<double> confusion_matrix = dlib::cross_validate_multiclass_trainer(trainer, samples, labels, 10);
             double accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix);
             cout << "gamma: " << gamma << ", lambda: " << lambda << ", accuracy: " << accuracy << endl; 
@@ -81,20 +81,20 @@ void ofxLearn::optimizeClassifier() {
     
     // normalize?
     /* 
-    dlib::vector_normalizer<sample_type> normalizer;
-    normalizer.train(samples);
-    for (unsigned long i = 0; i < samples.size(); ++i)
-        samples[i] = normalizer(samples[i]); 
-    */
+     dlib::vector_normalizer<sample_type> normalizer;
+     normalizer.train(samples);
+     for (unsigned long i = 0; i < samples.size(); ++i)
+     samples[i] = normalizer(samples[i]); 
+     */
     
     // set optimal parameters
     svm_trainer.set_kernel(kernel_type(0.0001));
     svm_trainer.set_lambda(0.0001);
 }
-     
+
 //--------------------------------------------------------------
 int ofxLearn::predict(vector<double> instance) {
-    sample_type samp;
+    sample_type samp(numFeatures);
     for (int j=0; j < instance.size(); j++)
         samp(j) = instance[j];
     return decision_function(samp);

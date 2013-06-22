@@ -2,7 +2,7 @@
 
 //--------------------------------------------------------------
 void testApp::setup(){
-
+    
     // We are randomly distributing NUMPOINTS instance vectors as points
     // in 3-d space, and sending them to our classifier object
     for (int i = 0; i < NUMPOINTS; i++) {
