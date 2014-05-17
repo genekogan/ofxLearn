@@ -65,7 +65,7 @@ void testApp::keyPressed(int key){
     else if (key=='c') {
         if (isCreatingInstance) {
             instance = maker.createInstanceFromPointArray(points);
-            lastLabel = classifier.predict(instance);
+            lastLabel = classifier.classify(instance);
             points.clear();
             isCreatingInstance = false;
             lastInstanceIsTraining = false;

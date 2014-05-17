@@ -25,19 +25,43 @@ void ofxLearn::addTrainingInstance(vector<double> instance, int label) {
 }
 
 //--------------------------------------------------------------
+void ofxLearn::addTrainingInstance(vector<double> instance, float label) {
+    addTrainingInstance(instance);
+    labels.push_back(label);
+}
+
+//--------------------------------------------------------------
 void ofxLearn::trainClassifier() {
-    cout << "beginning to train model... ";
+    cout << "beginning to train classifer... ";
     randomize_samples(samples, labels);
     decision_function = trainer.train(samples, labels);
     isTrained = true;
-    cout << " finished training model, ready to use." << endl;
+    cout << " finished training classifier, ready to use." << endl;
 }
 
 //--------------------------------------------------------------
 void ofxLearn::trainRegressor() {    
-    cout << "beginning to train model... ";
-    // tbd <-- regression model
-    cout << " finished training model, ready to use." << endl;
+    cout << "beginning to train regressor... ";
+    randomize_samples(samples, labels);
+    cout << "train it " << samples.size() << endl;
+    mlp_trainer = new mlp_trainer_type(9, 4);
+    for (int i=0; i<samples.size(); i++) {
+
+        cout << "train sample " << i << endl;
+        cout << "==="<<endl;
+        cout << labels[i] << endl;
+        cout << "==="<<endl;
+        cout << "vec " << samples[i] << endl;
+
+        for (int j=0; j<samples[i].size(); j++) {
+        }
+        cout << "==="<<endl;
+        mlp_trainer->train(samples[i], labels[i]);
+        cout <<" trained it"<<endl;
+
+    }
+    isTrained = true;
+    cout << " finished training regressor, ready to use." << endl;
 }
 
 //--------------------------------------------------------------
@@ -93,11 +117,19 @@ void ofxLearn::optimizeClassifier() {
 }
 
 //--------------------------------------------------------------
-int ofxLearn::predict(vector<double> instance) {
+int ofxLearn::classify(vector<double> instance) {
     sample_type samp(numFeatures);
     for (int j=0; j < instance.size(); j++)
         samp(j) = instance[j];
     return decision_function(samp);
+}
+
+//--------------------------------------------------------------
+float ofxLearn::predict(vector<double> instance) {
+    sample_type samp(instance.size());
+    for (int j=0; j < instance.size(); j++)
+        samp(j) = instance[j];
+    return (*mlp_trainer)(samp);
 }
 
 //--------------------------------------------------------------
@@ -109,7 +141,6 @@ void ofxLearn::saveModel(string filename) {
     serialize(df, fout);
     fout.close();
     cout << "saved" << endl;
-    
 }
 
 //--------------------------------------------------------------

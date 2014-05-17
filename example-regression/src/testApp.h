@@ -3,22 +3,6 @@
 #include "ofMain.h"
 #include "ofxLearn.h"
 
-
-class ofxGraphicsFeatureMaker {
-public:
-    ofxGraphicsFeatureMaker();
-    vector<double>      createInstanceFromPointArray(vector<ofVec2f> &points);    
-    void                drawInstanceFromPointArray(vector<double> &instance, 
-                                                   int x=0, int y=0, int width=100, int height=100);    
-protected:
-    ofFbo               fbo;  
-    ofPixels            fboPixels;
-    float               hop;
-    int                 n;
-};
-
-
-
 class testApp : public ofBaseApp{
 public:
     void setup();
@@ -36,24 +20,9 @@ public:
     void gotMessage(ofMessage msg);
     
     ofxLearn classifier;
-    ofxGraphicsFeatureMaker maker;
     vector<double> instance;
     vector<ofVec2f> points;
     bool isCreatingInstance, lastInstanceIsTraining;    
     int lastLabel;
-    
 };
 
-
-/*
- TO-DO
- =====
- save and load training instances to disk 
- regression
- clustering
- opencv hand-tracking example
- leapmotion example
- --
- tutorials
- readme
-*/

@@ -31,6 +31,7 @@ void testApp::update(){
 //--------------------------------------------------------------
 void testApp::draw() {
     glEnable(GL_DEPTH_TEST);
+    ofBackground(255, 255, 255);
         
     // We display the NUMPOINTS points on the screen, and color them
     // according to whichever cluster they were assigned to by
