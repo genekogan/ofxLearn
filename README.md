@@ -4,7 +4,7 @@ ofxLearn is a general-purpose machine learning library for OpenFrameworks, built
 
 ### About
 
-ofxLearn supports classification, regression, and unsupervised clustering tasks. The goal for it is to be a high-level wrapper to powerful machine learning routines which takes care of the ugly stuff (e.g. determining  model, kernel, and parameter selection) while at the same time providing optional accessors for dlib's more advanced functionality for more power users.
+ofxLearn supports classification, regression, and unsupervised clustering tasks. The goal for it is to be a high-level wrapper to powerful machine learning routines which takes care of the ugly stuff (e.g. determining  model, kernel, and parameter selection) while at the same time providing optional accessors for dlib's more advanced functionality.
 
 At this time, the library contains basic examples for classification and clustering, with more examples to come, including regression task, and applications to gesture recognition.
 
