@@ -39,7 +39,7 @@ public:
     ofxGraphicsFeatureMaker maker;
     vector<double> instance;
     vector<ofVec2f> points;
-    bool isCreatingInstance, lastInstanceIsTraining;    
+    bool isCreatingInstance, lastInstanceIsTraining, isTrained;
     int lastLabel;
     
 };

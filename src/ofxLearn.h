@@ -4,64 +4,62 @@
 #include "dlib/svm.h"
 #include "dlib/mlp.h"
 
-// samples
-typedef dlib::matrix<double, 0, 1> sample_type;
 
-// support vector machine (classifier)
-typedef dlib::radial_basis_kernel<sample_type> kernel_type;
-typedef dlib::krr_trainer<kernel_type> svm_trainer_type;
+// sample data
+typedef dlib::matrix<double, 0, 1>                  sample_type;
+typedef dlib::radial_basis_kernel<sample_type>      kernel_type;
+typedef dlib::vector_normalizer<sample_type>        normalizer_type;
 
-// multilayer perceptron (regressor)
-typedef dlib::mlp::kernel_1a_c mlp_trainer_type;
+// learning algorithm
+typedef dlib::krr_trainer<kernel_type>              svm_trainer_type;
 
-// optimization
-typedef dlib::one_vs_one_trainer<dlib::any_trainer<sample_type> > ovo_trainer;
-typedef dlib::one_vs_one_decision_function<ovo_trainer, dlib::decision_function<kernel_type> > dec_funct_type;
+// decision function
+typedef dlib::decision_function<kernel_type>        dec_funct_type;
+typedef dlib::normalized_function<dec_funct_type>   funct_type;
+
+// multiclass classification
+typedef dlib::any_trainer<sample_type>              any_trainer;
+typedef dlib::one_vs_one_trainer<any_trainer>       ovo_trainer;
+typedef dlib::one_vs_one_decision_function
+                <ovo_trainer, dec_funct_type>       ovo_d_funct_type;
+typedef dlib::normalized_function<ovo_d_funct_type> ovo_funct_type;
 
 
-class ofxLearn {
+class ofxLearn
+{
 public:
-    ofxLearn();
-    void                addTrainingInstance(vector<double> instance, int label);
-    void                addTrainingInstance(vector<double> instance, float label);
+    
+    // data
+    void                addTrainingInstance(vector<double> instance, double label);
     void                addTrainingInstance(vector<double> instance);
-    void                clearTrainingSet();
+    void                clearTrainingSet() { samples.clear(); }
+    int                 getNumberTrainingInstances() { return samples.size(); }
+    
+    // model
     void                trainClassifier();
-    void                trainRegressor();
-    vector<int>         findClusters(int k);    // todo: pointer to vector as argument
-
+    void                trainRegression();
     int                 classify(vector<double> instance);
-    float               predict(vector<double> instance);
-    void                optimizeClassifier();
-    int                 getNumberTrainingInstances() { return numInstances; }
+    double              predict(vector<double> instance);
+    vector<int>         getClusters(int k);
     
-    void                saveModel(string filename);
-    void                loadModel(string filename);
-    void                saveDataset(string filename);
-    void                loadDataset(string filename);
+    // IO
+    void                saveModel(char *filename);
+    void                loadModel(char *filename);
     
-    bool                isTrained;
-
-
-    
-    // alpha (learning rate), momentum
     
 private:
-    int                 numFeatures;
-    int                 numInstances;
+    
+    // data
     vector<sample_type> samples;
     vector<double>      labels;
+    normalizer_type     normalizer;
     
-    mlp_trainer_type    *mlp_trainer;
+    // classification
     svm_trainer_type    svm_trainer;
-    
     ovo_trainer         trainer;
-    dec_funct_type      decision_function;
+    ovo_funct_type      classification_function;
+    
+    // regression
+    funct_type          regression_function;
+
 };
-
-// TODO
-// - destructor/clean up
-// - updat save and mode for regressor
-
-
-

@@ -19,8 +19,8 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     
-    ofxLearn regression;
+    ofxLearn classifier;
     vector<vector<double> > trainingExamples;
-    vector<double> trainingLabels;
+    vector<int> trainingLabels;
 };
 

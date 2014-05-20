@@ -22,7 +22,7 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     
-    ofxLearn classifier;
+    ofxLearn learn;
     vector<double> instances[NUMPOINTS];
     vector<int> clusters; 
     

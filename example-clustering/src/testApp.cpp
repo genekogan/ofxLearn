@@ -9,12 +9,12 @@ void testApp::setup(){
         instances[i].push_back( ofRandom(-500,500) );
         instances[i].push_back( ofRandom(-500,500) );
         instances[i].push_back( ofRandom(-500,500) );
-        classifier.addTrainingInstance( instances[i] );
+        learn.addTrainingInstance( instances[i] );
     }
 
     // we tell ofxLearn to assign our NUMPOINTS points into NUMCLUSTERS clusters.  
     // It returns a vector of integers specifying the cluster for each of the points
-    clusters = classifier.findClusters(NUMCLUSTERS);
+    clusters = learn.getClusters(NUMCLUSTERS);
     
     for (int i = 0; i < clusters.size(); i++)
         cout << "Instance " << ofToString(i) << " " << ofToString(instances[i]) << " assigned to cluster " << ofToString(clusters[i]) << endl;
@@ -30,8 +30,7 @@ void testApp::update(){
 
 //--------------------------------------------------------------
 void testApp::draw() {
-    glEnable(GL_DEPTH_TEST);
-    ofBackground(255, 255, 255);
+    ofBackground(255);
         
     // We display the NUMPOINTS points on the screen, and color them
     // according to whichever cluster they were assigned to by

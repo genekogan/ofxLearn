@@ -16,7 +16,7 @@ void testApp::draw() {
 
     ofDrawBitmapString("Training set currently contains " + ofToString(classifier.getNumberTrainingInstances()) + " examples", 55, 30);
     
-    if (classifier.isTrained)
+    if (isTrained)
         ofDrawBitmapString("Model trained and ready to use", 55, 55);
     else
         ofDrawBitmapString("No model trained yet", 55, 55);
@@ -33,7 +33,7 @@ void testApp::draw() {
         if (lastInstanceIsTraining)
             ofDrawBitmapString("Last instance added to training set, class " + ofToString(lastLabel), 555, 30);
         else
-            ofDrawBitmapString("Prediction for this instance: class" + ofToString(lastLabel), 555, 30);
+            ofDrawBitmapString("Prediction for this instance: class " + ofToString(lastLabel), 555, 30);
         maker.drawInstanceFromPointArray(instance, 550, 50, 300, 300);
     }   
     
@@ -75,12 +75,11 @@ void testApp::keyPressed(int key){
     else if (key==' ')
         isCreatingInstance = true;
     // train model
-    else if (key=='t')
+    else if (key=='t') {
         classifier.trainClassifier();
+        isTrained = true;
+    }
     // find optimal parameters
-    else if (key=='o')
-        classifier.optimizeClassifier();
-    // save model to disk
     else if (key=='s')
         classifier.saveModel("data/df.dat");
     // load model from disk
