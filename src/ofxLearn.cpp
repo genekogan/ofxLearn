@@ -143,3 +143,27 @@ void ofxLearn::loadModel(char *filename) {
     dlib::deserialize(classification_function, fin);
     cout << "loaded "<< filename << endl;
 }
+
+
+
+
+
+
+
+//--------------------------------------------------------------
+void ofxLearn::trainRegression2(){
+    randomize_samples(samples, labels);
+    mlp_trainer = new mlp_trainer_type(9, 4);
+    for (int i=0; i<samples.size(); i++) {
+        mlp_trainer->train(samples[i], labels[i]);
+    }
+    cout << " finished training regressor, ready to use." << endl;
+}
+
+//--------------------------------------------------------------
+double ofxLearn::predict2(vector<double> instance) {
+    sample_type samp(instance.size());
+    for (int j=0; j < instance.size(); j++)
+        samp(j) = instance[j];
+    return (*mlp_trainer)(samp);
+}
