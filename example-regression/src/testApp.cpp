@@ -3,10 +3,13 @@
 //--------------------------------------------------------------
 void testApp::setup() {
 
+    // create a noisy training set
+    // objective is to predict y as function of x
     for (int i=0; i<300; i++) {
         double x = ofRandom(ofGetWidth());
         double y = 0.00074 * pow(x, 2) + 0.0095*x + ofRandom(-80, 80);
         
+        // each instance contains one feature
         vector<double> instance;
         instance.push_back(x);
         

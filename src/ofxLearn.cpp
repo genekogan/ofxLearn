@@ -16,7 +16,9 @@ void ofxLearn::addTrainingInstance(vector<double> instance, double label) {
 }
 
 //--------------------------------------------------------------
-void ofxLearn::trainClassifier() {
+void ofxLearn::trainClassifier(TrainMode trainMode) {
+    cout << "beginning to train classifier... ";
+    
     // normalize training set
     normalizer.train(samples);
     for (unsigned long i = 0; i < samples.size(); ++i)
@@ -24,30 +26,40 @@ void ofxLearn::trainClassifier() {
     
     // randomize training set
     randomize_samples(samples, labels);
+
+    float best_gamma, best_lambda;
+    
+    // choose default parameters
+    if (trainMode == FAST) {
+        best_gamma = 1;
+        best_lambda = 0.001;
+    }
     
     // grid parameter search to determine best parameters
-    float best_gamma, best_lambda;
-    float best_accuracy = 0;
-    cout << "optimizing via cross validation. this may take a while... " << endl;
-    for (double gamma = 0.01; gamma <= 0.1; gamma *= 10) {
-        for (double lambda = 0.001; lambda <=1 ; lambda *= 10){
-            svm_trainer.set_kernel(kernel_type(gamma));
-            svm_trainer.set_lambda(lambda);
-            trainer.set_trainer(svm_trainer);
-            const dlib::matrix<double> confusion_matrix = dlib::cross_validate_multiclass_trainer(trainer, samples, labels, 10);
-            double accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix);
-            //cout << confusion_matrix << endl;
-            cout << "gamma: " << gamma << ", lambda: " << lambda << ", accuracy: " << accuracy << endl;
-            if (accuracy > best_accuracy) {
-                best_accuracy = accuracy;
-                best_gamma = gamma;
-                best_lambda = lambda;
+    else if (trainMode == ACCURATE) {
+        float best_accuracy = 0;
+        cout << "optimizing via cross validation. this may take a while... " << endl;
+        for (double gamma = 0.01; gamma <= 0.1; gamma *= 10) {
+            for (double lambda = 0.001; lambda <=1 ; lambda *= 10){
+                svm_trainer.set_kernel(kernel_type(gamma));
+                svm_trainer.set_lambda(lambda);
+                trainer.set_trainer(svm_trainer);
+                const dlib::matrix<double> confusion_matrix = dlib::cross_validate_multiclass_trainer(trainer, samples, labels, 10);
+                double accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix);
+                //cout << confusion_matrix << endl;
+                cout << "gamma: " << gamma << ", lambda: " << lambda << ", accuracy: " << accuracy << endl;
+                if (accuracy > best_accuracy) {
+                    best_accuracy = accuracy;
+                    best_gamma = gamma;
+                    best_lambda = lambda;
+                }
             }
         }
+        cout << "finished training with best parameters: gamma "
+             << best_gamma << ", lambda " << best_lambda << endl;
     }
-    cout << "finished training with best parameters: gamma "<<best_gamma
-            <<", lambda "<< best_lambda << endl;
     
+    // final train using best parameters
     svm_trainer.set_kernel(kernel_type(best_gamma));
     svm_trainer.set_lambda(best_lambda);
     trainer.set_trainer(svm_trainer);
@@ -55,10 +67,12 @@ void ofxLearn::trainClassifier() {
     // set normalized multiclass decision function
     classification_function.function = trainer.train(samples, labels);
     classification_function.normalizer = normalizer;
+    
+    cout << "finished classifier" << endl;
 }
 
 //--------------------------------------------------------------
-void ofxLearn::trainRegression() {
+void ofxLearn::trainRegression(TrainMode trainMode) {
     cout << "beginning to train regressor... ";
 
     // normalize training set
@@ -69,30 +83,43 @@ void ofxLearn::trainRegression() {
     // randomize training set
     randomize_samples(samples, labels);
     
-    double max_gamma = 10.0 * 3.0/compute_mean_squared_distance(randomly_subsample(samples, 2000));
     float best_gamma, best_lambda;
-    float best_mse = 1000000;
-    for (double gamma = 0.01; gamma <= max_gamma; gamma *= 10) {
-        for (double lambda = 0.001; lambda <=1.0 ; lambda *= 10){
-            svm_trainer.set_kernel(kernel_type(gamma));
-            svm_trainer.set_lambda(lambda);    
-            vector<double> loo_values;
-            svm_trainer.train(samples, labels, loo_values);
-            float mse = dlib::mean_squared_error(labels,loo_values);
-            if (mse < best_mse) {
-                best_mse = mse;
-                best_gamma = gamma;
-                best_lambda = lambda;
+
+    // choose default parameters
+    if (trainMode == FAST) {
+        best_gamma = 1;
+        best_lambda = 0.001;
+    }
+    
+    // grid parameter search to determine best parameters
+    else if (trainMode == ACCURATE) {
+        double max_gamma = 10.0 * 3.0/compute_mean_squared_distance(randomly_subsample(samples, 2000));
+        float best_mse = 1000000;
+        for (double gamma = 0.01; gamma <= max_gamma; gamma *= 10) {
+            for (double lambda = 0.001; lambda <=1.0 ; lambda *= 10){
+                svm_trainer.set_kernel(kernel_type(gamma));
+                svm_trainer.set_lambda(lambda);    
+                vector<double> loo_values;
+                svm_trainer.train(samples, labels, loo_values);
+                float mse = dlib::mean_squared_error(labels,loo_values);
+                if (mse < best_mse) {
+                    best_mse = mse;
+                    best_gamma = gamma;
+                    best_lambda = lambda;
+                }
             }
         }
+        cout << "finished training with best parameters: gamma "
+             << best_gamma << ", lambda " << best_lambda << endl;
     }
-    cout << "finished training with best parameters: gamma "<<best_gamma
-            <<", lambda "<< best_lambda << endl;
     
+    // final train using best parameters
     svm_trainer.set_kernel(kernel_type(best_gamma));
     svm_trainer.set_lambda(best_lambda);
     regression_function.function = svm_trainer.train(samples, labels);
     regression_function.normalizer = normalizer;
+    
+    cout << "finished regressor" << endl;
 }
 
 //--------------------------------------------------------------
@@ -142,28 +169,4 @@ void ofxLearn::loadModel(char *filename) {
     ifstream fin(filename, ios::binary);
     dlib::deserialize(classification_function, fin);
     cout << "loaded "<< filename << endl;
-}
-
-
-
-
-
-
-
-//--------------------------------------------------------------
-void ofxLearn::trainRegression2(){
-    randomize_samples(samples, labels);
-    mlp_trainer = new mlp_trainer_type(9, 4);
-    for (int i=0; i<samples.size(); i++) {
-        mlp_trainer->train(samples[i], labels[i]);
-    }
-    cout << " finished training regressor, ready to use." << endl;
-}
-
-//--------------------------------------------------------------
-double ofxLearn::predict2(vector<double> instance) {
-    sample_type samp(instance.size());
-    for (int j=0; j < instance.size(); j++)
-        samp(j) = instance[j];
-    return (*mlp_trainer)(samp);
 }

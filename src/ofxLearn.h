@@ -25,9 +25,9 @@ typedef dlib::one_vs_one_decision_function
 typedef dlib::normalized_function<ovo_d_funct_type> ovo_funct_type;
 
 
-
-typedef dlib::mlp::kernel_1a_c mlp_trainer_type;
-
+// FAST means choose default parameters
+// ACCURATE does grid parameter search to determine best parameters
+enum TrainMode { FAST, ACCURATE };
 
 
 class ofxLearn
@@ -41,8 +41,8 @@ public:
     int                 getNumberTrainingInstances() { return samples.size(); }
     
     // model
-    void                trainClassifier();
-    void                trainRegression();
+    void                trainClassifier(TrainMode trainMode = ACCURATE);
+    void                trainRegression(TrainMode trainMode = ACCURATE);
     
     int                 classify(vector<double> instance);
     double              predict(vector<double> instance);
@@ -51,13 +51,6 @@ public:
     // IO
     void                saveModel(char *filename);
     void                loadModel(char *filename);
-    
-    
-    
-    
-    // MLP
-    void                trainRegression2();
-    double              predict2(vector<double> instance);
 
     
 private:
@@ -74,10 +67,4 @@ private:
     
     // regression
     funct_type          regression_function;
-    
-    
-
-    // MLP
-    mlp_trainer_type    *mlp_trainer;
-
 };
