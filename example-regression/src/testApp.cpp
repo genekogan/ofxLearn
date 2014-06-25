@@ -9,7 +9,9 @@ void testApp::setup() {
         double x = ofRandom(ofGetWidth());
         double y = 0.00074 * pow(x, 2) + 0.0095*x + ofRandom(-80, 80);
         
-        // each instance contains one feature
+        // for this example, each instance contains one feature.
+        // in general, an instance vector can contain any number
+        // of elements, but must stay fixed for a single classifier/regressor
         vector<double> instance;
         instance.push_back(x);
         
