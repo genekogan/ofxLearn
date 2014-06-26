@@ -51,6 +51,10 @@ void testApp::draw() {
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
+    
+    if (key==' ') {
+        regression.saveModel("testsave.dat");
+    }
 }
 
 //--------------------------------------------------------------

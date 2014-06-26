@@ -37,7 +37,7 @@ public:
     // data
     void                addTrainingInstance(vector<double> instance, double label);
     void                addTrainingInstance(vector<double> instance);
-    void                clearTrainingSet() { samples.clear(); }
+    void                clearTrainingInstances();
     int                 getNumberTrainingInstances() { return samples.size(); }
     
     // model
@@ -49,8 +49,8 @@ public:
     vector<int>         getClusters(int k);
     
     // IO
-    void                saveModel(char *filename);
-    void                loadModel(char *filename);
+    void                saveModel(string filename);
+    void                loadModel(string filename);
 
     
 private:
