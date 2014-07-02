@@ -21,8 +21,12 @@ void testApp::setup() {
         regression.addTrainingInstance(instance, y);
     }
 
-    regression.trainRegression();
- 
+    //regression.trainRegression(ACCURATE);
+    
+    
+    // or try different regression algorithm
+    regression.trainRegression(ACCURATE, REGRESSION_MLP);
+    
 }
 
 //--------------------------------------------------------------

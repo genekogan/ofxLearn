@@ -24,10 +24,12 @@ typedef dlib::one_vs_one_decision_function
                 <ovo_trainer, dec_funct_type>       ovo_d_funct_type;
 typedef dlib::normalized_function<ovo_d_funct_type> ovo_funct_type;
 
+// multilayer perceptron (neural net)
+typedef dlib::mlp::kernel_1a_c                      mlp_trainer_type;
 
-// FAST means choose default parameters
-// ACCURATE does grid parameter search to determine best parameters
+
 enum TrainMode { FAST, ACCURATE };
+enum LearnMode { CLASSIFICATION, REGRESSION_SVM, REGRESSION_MLP, CLUSTERING };
 
 
 class ofxLearn
@@ -41,10 +43,9 @@ public:
     int                 getNumberTrainingInstances() { return samples.size(); }
     
     // model
-    void                trainClassifier(TrainMode trainMode = ACCURATE);
-    void                trainRegression(TrainMode trainMode = ACCURATE);
+    void                trainClassifier(TrainMode trainMode = ACCURATE, LearnMode learnMode = CLASSIFICATION);
+    void                trainRegression(TrainMode trainMode = ACCURATE, LearnMode learnMode = REGRESSION_SVM);
     
-    int                 classify(vector<double> instance);
     double              predict(vector<double> instance);
     vector<int>         getClusters(int k);
     
@@ -54,6 +55,8 @@ public:
 
     
 private:
+    void                trainRegressionSvm(TrainMode trainMode);
+    void                trainRegressionMlp(TrainMode trainMode);
     
     // data
     vector<sample_type> samples;
@@ -67,4 +70,8 @@ private:
     
     // regression
     funct_type          regression_function;
+    mlp_trainer_type    *mlp_trainer;
+    
+    // learn mode
+    LearnMode           learnMode;
 };

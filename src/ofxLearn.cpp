@@ -22,7 +22,9 @@ void ofxLearn::clearTrainingInstances() {
 }
 
 //---------
-void ofxLearn::trainClassifier(TrainMode trainMode) {
+void ofxLearn::trainClassifier(TrainMode trainMode, LearnMode learnMode) {
+    this->learnMode = CLASSIFICATION;   // only one learnMode at the moment
+    
     if (samples.size() == 0) {
         cout << "Error: you have not added any samples yet. Can not train." << endl;
         return;
@@ -83,13 +85,32 @@ void ofxLearn::trainClassifier(TrainMode trainMode) {
 }
 
 //---------
-void ofxLearn::trainRegression(TrainMode trainMode) {
+void ofxLearn::trainRegression(TrainMode trainMode, LearnMode learnMode) {
+    this->learnMode = learnMode;
+    
     if (samples.size() == 0) {
         cout << "Error: you have not added any samples yet. Can not train." << endl;
         return;
     }
     cout << "beginning to train regression function... ";
 
+    switch (learnMode) {
+        case REGRESSION_SVM:
+            trainRegressionSvm(trainMode);
+            break;
+
+        case REGRESSION_MLP:
+            trainRegressionMlp(trainMode);
+            break;
+            
+        default:
+            break;
+    }
+    cout << "finished regression function." << endl;
+}
+
+//---------
+void ofxLearn::trainRegressionSvm(TrainMode trainMode) {
     // normalize training set
     normalizer.train(samples);
     vector<sample_type> normalized_samples;
@@ -115,7 +136,7 @@ void ofxLearn::trainRegression(TrainMode trainMode) {
         for (double gamma = 0.01; gamma <= max_gamma; gamma *= 10) {
             for (double lambda = 0.001; lambda <= 1.0; lambda *= 10){
                 svm_trainer.set_kernel(kernel_type(gamma));
-                svm_trainer.set_lambda(lambda);    
+                svm_trainer.set_lambda(lambda);
                 vector<double> loo_values;
                 svm_trainer.train(normalized_samples, labels, loo_values);
                 float mse = dlib::mean_squared_error(labels, loo_values);
@@ -127,7 +148,7 @@ void ofxLearn::trainRegression(TrainMode trainMode) {
             }
         }
         cout << "finished training with best parameters: gamma "
-             << best_gamma << ", lambda " << best_lambda << endl;
+        << best_gamma << ", lambda " << best_lambda << endl;
     }
     
     // final train using best parameters
@@ -135,30 +156,47 @@ void ofxLearn::trainRegression(TrainMode trainMode) {
     svm_trainer.set_lambda(best_lambda);
     regression_function.function = svm_trainer.train(normalized_samples, labels);
     regression_function.normalizer = normalizer;
-    
-    cout << "finished regression function." << endl;
 }
 
 //---------
-int ofxLearn::classify(vector<double> instance) {
-    sample_type sample(instance.size());
-    for (int i=0; i<instance.size(); i++) {
-        sample(i) = instance[i];
+void ofxLearn::trainRegressionMlp(TrainMode trainMode) {
+    randomize_samples(samples, labels);
+    mlp_trainer = new mlp_trainer_type(samples[0].size(), 4);
+    for (int i=0; i<samples.size(); i++) {
+        mlp_trainer->train(samples[i], labels[i]);
     }
-    return classification_function(sample);
 }
 
 //---------
 double ofxLearn::predict(vector<double> instance) {
+    double prediction;
+    
+    // create sample
     sample_type sample(instance.size());
-    for (int j=0; j < instance.size(); j++) {
-        sample(j) = instance[j];
+    for (int i=0; i<instance.size(); i++) {
+        sample(i) = instance[i];
     }
-    return regression_function(sample);
+
+    // make prediction
+    switch (learnMode) {
+        case CLASSIFICATION:
+            prediction = classification_function(sample);
+            break;
+        case REGRESSION_SVM:
+            prediction = regression_function(sample);
+            break;
+        case REGRESSION_MLP:
+            prediction = (*mlp_trainer)(sample);
+            break;            
+        default:
+            break;
+    }    
+    return prediction;
 }
 
 //---------
 vector<int> ofxLearn::getClusters(int k) {
+    learnMode = CLUSTERING;
     cout << "Running kmeans clustering... this could take a few moments... " << endl;
     vector<sample_type> initial_centers;
     dlib::kcentroid<kernel_type> kc(kernel_type(0.00001), 0.00001, 64);
@@ -177,7 +215,22 @@ vector<int> ofxLearn::getClusters(int k) {
 void ofxLearn::saveModel(string filename) {
     const char *filepath = ofToDataPath(filename).c_str();
     ofstream fout(filepath, ios::binary);
-    dlib::serialize(regression_function, fout);
+    cout << "try serialize reg func " << filename << endl;
+
+    switch (learnMode) {
+        case CLASSIFICATION:
+            dlib::serialize(classification_function, fout);
+            break;
+        case REGRESSION_SVM:
+            dlib::serialize(regression_function, fout);
+            break;
+        case REGRESSION_MLP:
+            // this needs to be fixed...
+            //dlib::serialize(*mlp_trainer, fout);
+            break;
+        default:
+            break;
+    }
     fout.close();
     cout << "saved model: "<<filename<<endl;
 }
