@@ -15,22 +15,21 @@ void testApp::setup() {
         vector<double> instance;
         instance.push_back(x);
         
+        regression.addTrainingInstance(instance, y);
+        
         trainingExamples.push_back(instance);
         trainingLabels.push_back(y);
-
-        regression.addTrainingInstance(instance, y);
     }
 
-    //regression.trainRegression(ACCURATE);
-    
-    
-    // or try different regression algorithm
-    regression.trainRegression(ACCURATE, REGRESSION_MLP);
-    
+    // can train either FAST or ACCURATE. FAST uses
+    // default parameters whereas ACCURATE attempts
+    // a grid parameter search to find optimal parameters.
+    regression.trainRegression(ACCURATE);
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
+
 }
 
 //--------------------------------------------------------------
@@ -45,17 +44,18 @@ void testApp::draw() {
     }
 
     // predict regression for mouseX
-    vector<double> instance;
-    instance.push_back(ofGetMouseX());
-    double label = regression.predict(instance);
+    float x = ofGetMouseX();
 
+    vector<double> instance;
+    instance.push_back(x);
+    double label = regression.predict(instance);
+    
     ofSetColor(0, 255, 0);
-    ofCircle(ofGetMouseX(), label, ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 5, 35));
+    ofCircle(x, label, ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 3, 30));
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
-    
     if (key==' ') {
         regression.saveModel("testsave.dat");
     }
@@ -68,6 +68,7 @@ void testApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void testApp::mouseMoved(int x, int y){
+
 }
 
 //--------------------------------------------------------------

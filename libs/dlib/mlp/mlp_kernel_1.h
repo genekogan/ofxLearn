@@ -123,6 +123,11 @@ namespace dlib
             set_all_elements(w2m,0);
             set_all_elements(w3m,0);
         }
+				
+		/* inserted by gene for ofxLearn -- accessors to mlp coefficients */
+		matrix<double> get_w1() const { return w1; }
+		matrix<double> get_w2() const { return w2; }
+		matrix<double> get_w3() const { return w3; }
 
         long input_layer_nodes (
         ) const { return input_nodes; }

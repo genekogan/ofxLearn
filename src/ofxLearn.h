@@ -52,9 +52,19 @@ public:
     // IO
     void                saveModel(string filename);
     void                loadModel(string filename);
+    
+    // get classifiers
+    ovo_funct_type      getClassifier()    { return classification_function; }
+    funct_type          getRegressionSvm() { return regression_function; }
+    mlp_trainer_type*   getRegressionMlp() { return mlp_trainer; }
+    
+    // mlp number of hidden layers
+    int                 getMlpNumHiddenLayers() { return mlpNumHiddenLayers; }
+    void                setMlpNumHiddenLayers(int n) { mlpNumHiddenLayers = n; }
 
     
 private:
+    
     void                trainRegressionSvm(TrainMode trainMode);
     void                trainRegressionMlp(TrainMode trainMode);
     
@@ -71,7 +81,8 @@ private:
     // regression
     funct_type          regression_function;
     mlp_trainer_type    *mlp_trainer;
-    
+    int                 mlpNumHiddenLayers = 2;
+        
     // learn mode
     LearnMode           learnMode;
 };

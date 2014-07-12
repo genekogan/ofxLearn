@@ -148,7 +148,7 @@ void ofxLearn::trainRegressionSvm(TrainMode trainMode) {
             }
         }
         cout << "finished training with best parameters: gamma "
-        << best_gamma << ", lambda " << best_lambda << endl;
+            << best_gamma << ", lambda " << best_lambda << endl;
     }
     
     // final train using best parameters
@@ -161,8 +161,11 @@ void ofxLearn::trainRegressionSvm(TrainMode trainMode) {
 //---------
 void ofxLearn::trainRegressionMlp(TrainMode trainMode) {
     randomize_samples(samples, labels);
-    mlp_trainer = new mlp_trainer_type(samples[0].size(), 4);
+    mlp_trainer = new mlp_trainer_type(samples[0].size(), mlpNumHiddenLayers);
     for (int i=0; i<samples.size(); i++) {
+        if (labels[i] < 0 || labels[i] > 1) {
+            cout << "Error: MLP can only take labels between 0.0 and 1.0"<<endl;
+        }
         mlp_trainer->train(samples[i], labels[i]);
     }
 }
@@ -187,7 +190,8 @@ double ofxLearn::predict(vector<double> instance) {
             break;
         case REGRESSION_MLP:
             prediction = (*mlp_trainer)(sample);
-            break;            
+            break;
+            
         default:
             break;
     }    
