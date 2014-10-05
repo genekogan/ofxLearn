@@ -49,9 +49,14 @@ public:
     double              predict(vector<double> instance);
     vector<int>         getClusters(int k);
     
+    
+    /* todo: loading/saving only works for regression right now.
+     need to saving and loading model dependent */
+    
+
     // IO
-    void                saveModel(string filename);
-    void                loadModel(string filename);
+    void                saveModel(string path);
+    void                loadModel(string path);
     
     // get classifiers
     ovo_funct_type      getClassifier()    { return classification_function; }
