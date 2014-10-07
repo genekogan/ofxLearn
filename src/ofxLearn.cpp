@@ -156,9 +156,6 @@ void ofxLearn::trainRegressionSvm(TrainMode trainMode) {
     svm_trainer.set_lambda(best_lambda);
     regression_function.function = svm_trainer.train(normalized_samples, labels);
     regression_function.normalizer = normalizer;
-    
-    cout << "TRAINED REGRESSION FUNCT"<<endl;
-
 }
 
 //---------
@@ -220,12 +217,8 @@ vector<int> ofxLearn::getClusters(int k) {
 
 //---------
 void ofxLearn::saveModel(string path) {
-    //path = "/Users/Gene/Desktop/testreg.dat";
     const char *filepath = path.c_str();
-    cout << "ofxLearn save to " << ofToString(filepath) << endl;
-    
     ofstream fout(filepath, ios::binary);
-    cout << "try serialize reg func " << path << endl;
 
     switch (learnMode) {
         case CLASSIFICATION:
@@ -236,7 +229,7 @@ void ofxLearn::saveModel(string path) {
             break;
         case REGRESSION_MLP:
             // this needs to be fixed...
-            //dlib::serialize(*mlp_trainer, fout);
+            dlib::serialize(mlp_trainer, fout);
             break;
         default:
             break;
@@ -246,10 +239,23 @@ void ofxLearn::saveModel(string path) {
 }
 
 //---------
-void ofxLearn::loadModel(string path) {
+void ofxLearn::loadModel(LearnMode learnMode, string path) {
+    this->learnMode = learnMode;
     const char *filepath = path.c_str();
     ifstream fin(filepath, ios::binary);
-    learnMode = REGRESSION_SVM;
-    dlib::deserialize(regression_function, fin);
+    switch (learnMode) {
+        case CLASSIFICATION:
+            dlib::deserialize(classification_function, fin);
+            break;
+        case REGRESSION_SVM:
+            dlib::deserialize(regression_function, fin);
+            break;
+        case REGRESSION_MLP:
+            // this needs to be fixed...
+//            dlib::deserialize(*mlp_trainer, fin);
+            break;
+        default:
+            break;
+    }
     cout << "loaded model: "<< path << endl;
 }

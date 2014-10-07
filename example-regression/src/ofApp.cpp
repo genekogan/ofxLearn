@@ -57,7 +57,7 @@ void ofApp::draw() {
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
     if (key==' ') {
-        regression.saveModel(ofToDataPath("testsave.dat"));
+        regression.saveModel(REGRESSION_SVM, ofToDataPath("testsave.dat"));
     }
 }
 
