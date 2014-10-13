@@ -2,6 +2,8 @@
 
 //--------------------------------------------------------------
 void ofApp::setup() {
+    ofSetLogLevel(OF_LOG_VERBOSE);
+
     for (int i=0; i<1000; i++) {
         double x = ofRandom(ofGetWidth());
         double y = ofRandom(ofGetHeight());
@@ -25,7 +27,7 @@ void ofApp::setup() {
         classifier.addTrainingInstance(instance, label);
     }
     
-    classifier.trainClassifier();
+    classifier.trainClassifier(FAST);   // can be FAST or ACCURATE
 }
 
 //--------------------------------------------------------------

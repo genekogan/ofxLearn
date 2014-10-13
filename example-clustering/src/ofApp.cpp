@@ -2,7 +2,8 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    
+    ofSetLogLevel(OF_LOG_VERBOSE);
+
     // We are randomly distributing NUMPOINTS instance vectors as points
     // in 3-d space, and sending them to our classifier object
     for (int i = 0; i < NUMPOINTS; i++) {
@@ -24,7 +25,6 @@ void ofApp::setup(){
     for (int i = 0; i < NUMCLUSTERS; i++) {
         colors[i] = ofColor( ofRandom(255), ofRandom(255), ofRandom(255) );
     }
-
 }
 
 //--------------------------------------------------------------

@@ -28,6 +28,7 @@ typedef dlib::normalized_function<ovo_d_funct_type> ovo_funct_type;
 typedef dlib::mlp::kernel_1a_c                      mlp_trainer_type;
 
 
+// enums for training options
 enum TrainMode { FAST, ACCURATE };
 enum LearnMode { CLASSIFICATION, REGRESSION_SVM, REGRESSION_MLP, CLUSTERING };
 
@@ -35,6 +36,7 @@ enum LearnMode { CLASSIFICATION, REGRESSION_SVM, REGRESSION_MLP, CLUSTERING };
 class ofxLearn
 {
 public:
+    ofxLearn();
     
     // data
     void                addTrainingInstance(vector<double> instance, double label);
@@ -58,10 +60,13 @@ public:
     funct_type          getRegressionSvm() { return regression_function; }
     mlp_trainer_type*   getRegressionMlp() { return mlp_trainer; }
     
-    // mlp number of hidden layers
-    int                 getMlpNumHiddenLayers() { return mlpNumHiddenLayers; }
+    // mlp paramrters
     void                setMlpNumHiddenLayers(int n) { mlpNumHiddenLayers = n; }
-
+    void                setMlpMaxSamples(int n) { mlpMaxSamples = n; }
+    void                setMlpTargetRmse(float t) { mlpTargetRmse = t; }
+    int                 getMlpNumHiddenLayers() { return mlpNumHiddenLayers; }
+    int                 getMlpMaxSamples() { return mlpMaxSamples; }
+    float               getMlpTargetRmse() { return mlpTargetRmse; }
     
 private:
     
@@ -81,7 +86,9 @@ private:
     // regression
     funct_type          regression_function;
     mlp_trainer_type    *mlp_trainer;
-    int                 mlpNumHiddenLayers = 2;
+    int                 mlpNumHiddenLayers;
+    float               mlpTargetRmse;
+    int                 mlpMaxSamples;
         
     // learn mode
     LearnMode           learnMode;

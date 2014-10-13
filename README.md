@@ -12,11 +12,11 @@ The library contains basic examples for classification, regression, and clusteri
 
 ### Features
 
-ofxLearn supports classification and regression (both using [kernel ridge regression](http://en.wikipedia.org/wiki/Kernel_method)), and k-means clustering. 
+ofxLearn supports classification (using [kernel ridge regression](http://en.wikipedia.org/wiki/Kernel_method)), regression using (kernel ridge or [multilayer perceptron (neural network)](http://en.wikipedia.org/wiki/Multilayer_perceptron)), and [k-means clustering](http://en.wikipedia.org/wiki/K-means_clustering). 
 
 
 ### Usage
 
 Add ofxLearn's source folder (ofxLearn/src) to your project, but don't add the "libs" folder containing dlib, as it will cause naming collisions. Instead, add "../../../addons/ofxLearn/libs/" to your user header search paths.
 
-Note also that classification and regression can sometimes take several minutes to complete -- check the log in the console for progress.  
+Note also that classification and regression can sometimes take several minutes to complete, especially in `ACCURATE` mode -- check the log (set verbose) in the console for progress.  

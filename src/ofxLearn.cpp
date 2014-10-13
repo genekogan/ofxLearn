@@ -1,5 +1,13 @@
 #include "ofxLearn.h"
 
+
+//---------
+ofxLearn::ofxLearn() {
+    mlpNumHiddenLayers = 2;
+    mlpTargetRmse = 0.01;
+    mlpMaxSamples = 100000;
+}
+
 //---------
 void ofxLearn::addTrainingInstance(vector<double> instance) {
     sample_type samp(instance.size());
@@ -26,10 +34,10 @@ void ofxLearn::trainClassifier(TrainMode trainMode, LearnMode learnMode) {
     this->learnMode = CLASSIFICATION;   // only one learnMode at the moment
     
     if (samples.size() == 0) {
-        cout << "Error: you have not added any samples yet. Can not train." << endl;
+        ofLog(OF_LOG_ERROR, "You have not added any samples yet. Can not train.");
         return;
     }
-    cout << "beginning to train classifier function... ";
+    ofLog(OF_LOG_VERBOSE, "beginning to train classifier function... ");
     
     // normalize training set
     normalizer.train(samples);
@@ -51,8 +59,8 @@ void ofxLearn::trainClassifier(TrainMode trainMode, LearnMode learnMode) {
     
     // grid parameter search to determine best parameters
     else if (trainMode == ACCURATE) {
+        ofLog(OF_LOG_NOTICE, "Optimizing via cross validation. this may take a while...");
         float best_accuracy = 0;
-        cout << "optimizing via cross validation. this may take a while... " << endl;
         for (double gamma = 0.01; gamma <= 1.0; gamma *= 10) {
             for (double lambda = 0.001; lambda <= 1.0; lambda *= 10){
                 svm_trainer.set_kernel(kernel_type(gamma));
@@ -60,7 +68,7 @@ void ofxLearn::trainClassifier(TrainMode trainMode, LearnMode learnMode) {
                 trainer.set_trainer(svm_trainer);
                 const dlib::matrix<double> confusion_matrix = dlib::cross_validate_multiclass_trainer(trainer, normalized_samples, labels, 10);
                 double accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix);
-                cout << "gamma: " << gamma << ", lambda: " << lambda << ", accuracy: " << accuracy << endl;
+                ofLog(OF_LOG_VERBOSE, "gamma: "+ofToString(gamma)+", lambda: "+ofToString(lambda)+", accuracy: "+ofToString(accuracy));
                 if (accuracy > best_accuracy) {
                     best_accuracy = accuracy;
                     best_gamma = gamma;
@@ -68,8 +76,7 @@ void ofxLearn::trainClassifier(TrainMode trainMode, LearnMode learnMode) {
                 }
             }
         }
-        cout << "finished training with best parameters: gamma "
-             << best_gamma << ", lambda " << best_lambda << endl;
+        ofLog(OF_LOG_VERBOSE, "finished training with best parameters: gamma "+ofToString(best_gamma)+", lambda "+ofToString(best_lambda));
     }
 
     // final train using best parameters
@@ -81,7 +88,7 @@ void ofxLearn::trainClassifier(TrainMode trainMode, LearnMode learnMode) {
     classification_function.function = trainer.train(normalized_samples, labels);
     classification_function.normalizer = normalizer;
     
-    cout << "finished classifier function." << endl;
+    ofLog(OF_LOG_VERBOSE, "finished training classifier function.");
 }
 
 //---------
@@ -89,11 +96,11 @@ void ofxLearn::trainRegression(TrainMode trainMode, LearnMode learnMode) {
     this->learnMode = learnMode;
     
     if (samples.size() == 0) {
-        cout << "Error: you have not added any samples yet. Can not train." << endl;
+        ofLog(OF_LOG_ERROR, "You have not added any samples yet. Can not train.");
         return;
     }
-    cout << "beginning to train regression function... ";
-
+    ofLog(OF_LOG_VERBOSE, "beginning to train regression function... ");
+    
     switch (learnMode) {
         case REGRESSION_SVM:
             trainRegressionSvm(trainMode);
@@ -106,7 +113,7 @@ void ofxLearn::trainRegression(TrainMode trainMode, LearnMode learnMode) {
         default:
             break;
     }
-    cout << "finished regression function." << endl;
+    ofLog(OF_LOG_VERBOSE, "finished training regression function.");
 }
 
 //---------
@@ -147,8 +154,7 @@ void ofxLearn::trainRegressionSvm(TrainMode trainMode) {
                 }
             }
         }
-        cout << "finished training with best parameters: gamma "
-            << best_gamma << ", lambda " << best_lambda << endl;
+        ofLog(OF_LOG_VERBOSE, "finished training with best parameters: gamma "+ofToString(best_gamma)+", lambda "+ofToString(best_lambda));
     }
 
     // final train using best parameters
@@ -161,12 +167,35 @@ void ofxLearn::trainRegressionSvm(TrainMode trainMode) {
 //---------
 void ofxLearn::trainRegressionMlp(TrainMode trainMode) {
     randomize_samples(samples, labels);
-    mlp_trainer = new mlp_trainer_type(samples[0].size(), mlpNumHiddenLayers);
+    
+    vector<int> index;
     for (int i=0; i<samples.size(); i++) {
-        if (labels[i] < 0 || labels[i] > 1) {
-            cout << "Error: MLP can only take labels between 0.0 and 1.0"<<endl;
+        index.push_back(i);
+    }
+
+    mlp_trainer = new mlp_trainer_type(samples[0].size(), mlpNumHiddenLayers);
+    
+    int iterations = 0;
+    bool stoppingCriteria = false;
+    while (!stoppingCriteria) {
+        iterations++;
+        random_shuffle(index.begin(), index.end());
+        for (int i=0; i<samples.size(); i++) {
+            if (labels[index[i]] < 0 || labels[index[i]] > 1) {
+                ofLog(OF_LOG_ERROR, "Error: MLP can only take labels between 0.0 and 1.0");
+            }
+            mlp_trainer->train(samples[index[i]], labels[index[i]]);
         }
-        mlp_trainer->train(samples[i], labels[i]);
+        float rmse = 0.0;
+        for (int i=0; i<samples.size(); i++) {
+            rmse += pow((*mlp_trainer)(samples[index[i]]) - labels[index[i]], 2);
+        }
+        rmse = sqrt(rmse / samples.size());
+
+        ofLog(OF_LOG_VERBOSE, "MLP, "+ofToString(mlpNumHiddenLayers)+" layers, iteration "+ofToString(iterations)+", rmse "+ofToString(rmse));
+        if (rmse <= mlpTargetRmse || iterations*samples.size() >= mlpMaxSamples) {
+            stoppingCriteria = true;
+        }
     }
 }
 
@@ -200,8 +229,8 @@ double ofxLearn::predict(vector<double> instance) {
 
 //---------
 vector<int> ofxLearn::getClusters(int k) {
+    ofLog(OF_LOG_NOTICE, "Running kmeans clustering... this could take a few moments... ");
     learnMode = CLUSTERING;
-    cout << "Running kmeans clustering... this could take a few moments... " << endl;
     vector<sample_type> initial_centers;
     dlib::kcentroid<kernel_type> kc(kernel_type(0.00001), 0.00001, 64);
     dlib::kkmeans<kernel_type> kmeans(kc);
@@ -235,7 +264,7 @@ void ofxLearn::saveModel(string path) {
             break;
     }
     fout.close();
-    cout << "saved model: "<<path<<endl;
+    ofLog(OF_LOG_VERBOSE, "saved model: "+path);
 }
 
 //---------
@@ -257,5 +286,5 @@ void ofxLearn::loadModel(LearnMode learnMode, string path) {
         default:
             break;
     }
-    cout << "loaded model: "<< path << endl;
+    ofLog(OF_LOG_VERBOSE, "loaded model: "+path);
 }
