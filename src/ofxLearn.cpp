@@ -174,7 +174,7 @@ void ofxLearn::trainRegressionMlp(TrainMode trainMode) {
     }
 
     mlp_trainer = new mlp_trainer_type(samples[0].size(), mlpNumHiddenLayers);
-    
+        
     int iterations = 0;
     bool stoppingCriteria = false;
     while (!stoppingCriteria) {
