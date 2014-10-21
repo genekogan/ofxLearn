@@ -4,7 +4,10 @@
 void ofApp::setup() {
     ofSetLogLevel(OF_LOG_VERBOSE);
 
-    for (int i=0; i<1000; i++) {
+    // create a training set with 500 examples
+    // objective is to predict class of new (x, y) inputs
+
+    for (int i=0; i<500; i++) {
         double x = ofRandom(ofGetWidth());
         double y = ofRandom(ofGetHeight());
         
@@ -13,6 +16,10 @@ void ofApp::setup() {
         
         instance.push_back(x);
         instance.push_back(y);
+        
+        // we assign each example one of three classes (1/2/3) depending roughly
+        // on its distance from center. but we give it a little bit of noise so
+        // the classification is not too obvious and can generalize better
         
         float distFromCenter = ofDist(x, y, ofGetWidth()/2, ofGetHeight()/2);
         if (distFromCenter < ofRandom(100, 240))
@@ -27,11 +34,26 @@ void ofApp::setup() {
         classifier.addTrainingInstance(instance, label);
     }
     
-    classifier.trainClassifier(FAST);   // can be FAST or ACCURATE
+    
+    // can train either FAST or ACCURATE. FAST uses
+    // default parameters whereas ACCURATE attempts
+    // a grid parameter search to find optimal parameters.
+    // CLASSIFICATION does classification using a support vector machine (default).
+
+    classifier.trainClassifier(CLASSIFICATION, ACCURATE);
+    
+    
+    // after calling trainClassifier(), the learning algorithm begins
+    // processing in its own thread. the amount of time required to finish
+    // training can vary greatly from nearly instantly to several minutes,
+    // depending on the size of the training set, the accuracy setting used,
+    // and the properties of the data.
+
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+
 }
 
 //--------------------------------------------------------------
@@ -52,26 +74,40 @@ void ofApp::draw() {
         ofCircle(trainingExample[0], trainingExample[1], 5);
     }
     
-    vector<double> instance;
-    instance.push_back(ofGetMouseX());
-    instance.push_back(ofGetMouseY());
-    
-    int label = classifier.predict(instance);
-    
-    
-    if (label == 1) {
-        ofSetColor(255, 0, 0);
-    } else if (label == 2) {
-        ofSetColor(0, 255, 0);
-    } else if (label == 3) {
-        ofSetColor(0, 0, 255);
+
+    // while the classification is training, you can get a status update on it
+    if (classifier.getTraining()) {
+        ofSetColor(255, 240);
+        ofRect(5, 5, 500, 50);
+        ofSetColor(0);
+        ofDrawBitmapString(classifier.getStatusString(), 10, 20);
+        ofDrawBitmapString("Classifier progress: "+ofToString(int(100 * classifier.getProgress()))+"%", 10, 40);
     }
-    ofCircle(ofGetMouseX(), ofGetMouseY(), ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 5, 35));
+    
+    
+    // once classification is finished, we can try to predict the output of new inputs
+    if (classifier.getTrained()) {
+        vector<double> instance;
+        instance.push_back(ofGetMouseX());
+        instance.push_back(ofGetMouseY());
+        
+        int label = classifier.predict(instance);
+        
+        if (label == 1) {
+            ofSetColor(255, 0, 0);
+        } else if (label == 2) {
+            ofSetColor(0, 255, 0);
+        } else if (label == 3) {
+            ofSetColor(0, 0, 255);
+        }
+        ofCircle(ofGetMouseX(), ofGetMouseY(), ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 5, 35));
+    }
     
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+
 }
 
 //--------------------------------------------------------------

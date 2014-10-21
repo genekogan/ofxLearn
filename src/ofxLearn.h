@@ -28,14 +28,23 @@ typedef dlib::normalized_function<ovo_d_funct_type> ovo_funct_type;
 typedef dlib::mlp::kernel_1a_c                      mlp_trainer_type;
 
 
-// enums for training options
-enum TrainMode { FAST, ACCURATE };
-enum LearnMode { CLASSIFICATION, REGRESSION_SVM, REGRESSION_MLP, CLUSTERING };
+// choose training mode: fast or accurate
+enum TrainMode {
+    FAST,
+    ACCURATE };
+
+// choose algorithm: classification, regression, clustering
+enum LearnMode {
+    CLASSIFICATION,
+    REGRESSION_SVM, // support vector machine
+    REGRESSION_MLP, // multilayer perceptron
+    CLUSTERING };
 
 
-class ofxLearn
+class ofxLearn : public ofThread
 {
 public:
+    ~ofxLearn();
     ofxLearn();
     
     // data
@@ -45,11 +54,11 @@ public:
     int                 getNumberTrainingInstances() { return samples.size(); }
     
     // model
-    void                trainClassifier(TrainMode trainMode = ACCURATE, LearnMode learnMode = CLASSIFICATION);
-    void                trainRegression(TrainMode trainMode = ACCURATE, LearnMode learnMode = REGRESSION_SVM);
+    void                trainClassifier(LearnMode learnMode, TrainMode trainMode = ACCURATE);
+    void                trainClusters(int numClusters);
     
     double              predict(vector<double> instance);
-    vector<int>         getClusters(int k);
+    vector<int> &       getClusters();
 
     // IO
     void                saveModel(string path);
@@ -63,15 +72,29 @@ public:
     // mlp paramrters
     void                setMlpNumHiddenLayers(int n) { mlpNumHiddenLayers = n; }
     void                setMlpMaxSamples(int n) { mlpMaxSamples = n; }
-    void                setMlpTargetRmse(float t) { mlpTargetRmse = t; }
+    void                setMlpTargetRmse(float rmse) { mlpTargetRmse = rmse; }
     int                 getMlpNumHiddenLayers() { return mlpNumHiddenLayers; }
     int                 getMlpMaxSamples() { return mlpMaxSamples; }
+    int                 getMlpNumSamples() { return mlpSamples; }
     float               getMlpTargetRmse() { return mlpTargetRmse; }
+    float               getMlpRmse() { return mlpRmse; }
+
     
+    // get status
+    bool                getTraining() { return isTraining; }
+    bool                getTrained() { return isTrained; }
+    float               getProgress() { return progress; }
+    string              getStatusString() { return status; }
+    
+
 private:
     
+    void                threadedFunction();
+    
+    void                trainClassifierSvm(TrainMode trainMode);
     void                trainRegressionSvm(TrainMode trainMode);
     void                trainRegressionMlp(TrainMode trainMode);
+    void                trainKMeansClusters();
     
     // data
     vector<sample_type> samples;
@@ -87,9 +110,18 @@ private:
     funct_type          regression_function;
     mlp_trainer_type    *mlp_trainer;
     int                 mlpNumHiddenLayers;
-    float               mlpTargetRmse;
-    int                 mlpMaxSamples;
+    float               mlpTargetRmse, mlpRmse;
+    int                 mlpMaxSamples, mlpSamples;
+    
+    // clustering
+    int                 numClusters;
+    vector<int>         clusters;
         
-    // learn mode
+    // mode + status
     LearnMode           learnMode;
+    TrainMode           trainMode;
+    bool                isTraining;
+    bool                isTrained;
+    float               progress;
+    string              status;
 };

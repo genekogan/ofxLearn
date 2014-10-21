@@ -3,7 +3,8 @@
 #include "ofMain.h"
 #include "ofxLearn.h"
 
-class ofApp : public ofBaseApp{
+class ofApp : public ofBaseApp
+{
 public:
     void setup();
     void update();

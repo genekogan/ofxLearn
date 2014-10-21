@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include "ofxLearn.h"
 
-#define NUMPOINTS 300
+#define NUMPOINTS 500
 #define NUMCLUSTERS 5
 
 class ofApp : public ofBaseApp{
