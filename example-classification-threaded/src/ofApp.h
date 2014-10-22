@@ -19,7 +19,7 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     
-    ofxLearn classifier;
+    ofxLearnThreaded classifier;
     vector<vector<double> > trainingExamples;
     vector<int> trainingLabels;
 };

@@ -8,7 +8,6 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
-
 }
 
 //--------------------------------------------------------------
@@ -17,13 +16,10 @@ void ofApp::draw() {
     
     ofDrawBitmapString("Training set currently contains " + ofToString(classifier.getNumberTrainingInstances()) + " examples", 55, 30);
     
-    if (classifier.getTraining()) {
-        ofDrawBitmapString("Currently training classifier", 55, 55);
-        ofDrawBitmapString("Progress ("+ofToString(int(100*classifier.getProgress()))+"%) :: "+classifier.getStatusString(), 55, 80);
-    }
-    else if (classifier.getTrained()) {
+    if (isTrained)
         ofDrawBitmapString("Model trained and ready to use", 55, 55);
-    }
+    else
+        ofDrawBitmapString("No model trained yet", 55, 55);
     
     if (isCreatingInstance) {
         ofPushStyle();
@@ -38,7 +34,7 @@ void ofApp::draw() {
             ofDrawBitmapString("Last instance added to training set, class " + ofToString(lastLabel), 555, 30);
         else
             ofDrawBitmapString("Prediction for this instance: class " + ofToString(lastLabel), 555, 30);
-        maker.drawInstanceFromPointArray(instance, 700, 50, 300, 300);
+        maker.drawInstanceFromPointArray(instance, 550, 50, 300, 300);
     }
     
     // Instructions
@@ -76,21 +72,22 @@ void ofApp::keyPressed(int key){
         }
     }
     // begin recording new instance
-    else if (key==' ') {
+    else if (key==' ')
         isCreatingInstance = true;
-    }
     // train model
     else if (key=='t') {
-        classifier.trainClassifier(CLASSIFICATION, ACCURATE);
+        classifier.trainClassifier();
+        isTrained = true;
     }
     // find optimal parameters
-    else if (key=='s') {
+    else if (key=='s')
         classifier.saveModel("data/df.dat");
-    }
     // load model from disk
-    else if (key=='l') {
+    else if (key=='l')
         classifier.loadModel(CLASSIFICATION, "data/df.dat");
-    }
+    
+    //else if (key=='p')
+    //    preLoad();
 }
 
 //--------------------------------------------------------------
@@ -184,7 +181,8 @@ vector<double> ofxGraphicsFeatureMaker::createInstanceFromPointArray(vector<ofVe
         float diff_right = min((float)(diff / 2 + (diff / 2 - diff_left)), (float)(ofGetWidth() - (int)x_max));
         x_min -= diff_left;
         x_max += diff_right;
-    } else if (y_max - y_min < x_max - x_min) {
+    }
+    else if (y_max - y_min < x_max - x_min) {
         float diff = (x_max - x_min) - (y_max - y_min);
         float diff_top = min(diff / 2, y_min);
         float diff_bottom = min((float)(diff / 2 + (diff / 2 - diff_top)), (float)(ofGetHeight() - (int)y_max));
@@ -206,9 +204,8 @@ vector<double> ofxGraphicsFeatureMaker::createInstanceFromPointArray(vector<ofVe
     
     // write trajectory to image
     ofBeginShape();
-    for (int i = 0; i < points.size(); i++) {
+    for (int i = 0; i < points.size(); i++)
         ofCurveVertex(points[i].x, points[i].y);
-    }
     ofEndShape();
     ofPopStyle();
     fbo.end();
@@ -220,8 +217,7 @@ vector<double> ofxGraphicsFeatureMaker::createInstanceFromPointArray(vector<ofVe
     unsigned char * p = fboPixels.getPixels();
     vector<double> instance;
     
-    int r, g, b, left, right, top, bottom, index;
-    float weight, totalweight;
+    int r, g, b, left, right, top, bottom, index; float weight, totalweight;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             r = g = b = 0;
@@ -252,7 +248,7 @@ void ofxGraphicsFeatureMaker::drawInstanceFromPointArray(vector<double> &instanc
     float heightcell = (float) height / n;
     ofPushStyle();
     for (int j = 0; j < n * n; j++) {
-        ofSetColor(ofClamp(instance[j]*5, 0, 255));
+        ofSetColor(instance[j] * 6);
         int yoff = (j % n) * widthcell;
         int xoff = (j / n) * heightcell;
         ofRect(x + xoff, y + yoff, widthcell - 2, heightcell - 2);

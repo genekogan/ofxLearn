@@ -1,12 +1,22 @@
 #include "ofApp.h"
 
+/*
+ This example is identical to example-regression, except that it
+ uses an ofxLearnThreaded instead of ofxLearn.  This class allows you
+ to run learning procedures inside of a separate thread, which can
+ be useful because ofxLearn can take anywhere from seconds to minutes to
+ run, depending on the size and properties of the data, and the training mode.
+ After beginning a training procedure, you can track the status of the thread
+ using ofxLearnThreaded::getTrained()
+*/
+
 //--------------------------------------------------------------
 void ofApp::setup() {
     ofSetLogLevel(OF_LOG_VERBOSE);
     
     // create a noisy training set
     // objective is to predict y as function of x
-    for (int i=0; i<300; i++) {
+    for (int i=0; i<2000; i++) {
         double x = ofRandom(ofGetWidth());
         double y = 0.00074 * pow(x, 2) + 0.0095*x + ofRandom(-80, 80);
         
@@ -33,7 +43,7 @@ void ofApp::setup() {
     // REGRESSION_SVM does regression using a support vector machine (default).
     // REGRESSION_MLP uses a multilayer perceptron (neural network) and requires
     // that input and output vectors be normalized to (0.0, 1.0)
-    regression.trainRegression(REGRESSION_SVM, FAST);
+    regression.beginTrainRegression(REGRESSION_SVM, ACCURATE);
 }
 
 //--------------------------------------------------------------
@@ -46,21 +56,34 @@ void ofApp::draw() {
     
     // draw training set
     ofBackground(255);
+    ofFill();
     ofSetColor(255, 0, 0, 50);
     for (int i=0; i<trainingExamples.size(); i++) {
         vector<double> trainingExample = trainingExamples[i];
         ofCircle(ofGetWidth() * trainingExample[0], ofGetHeight() * trainingLabels[i], 5);
     }
     
-    // predict regression for mouseX
-    float x = (float) ofGetMouseX() / ofGetWidth();
     
-    vector<double> instance;
-    instance.push_back(x);
-    double label = regression.predict(instance);
+    if (regression.getTrained()) {
+        // predict regression for mouseX
+        float x = (float) ofGetMouseX() / ofGetWidth();
+        
+        vector<double> instance;
+        instance.push_back(x);
+        double label = regression.predict(instance);
+        
+        ofSetColor(0, 255, 0);
+        ofCircle(ofGetWidth() * x, ofGetHeight() * label, ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 3, 30));
+    }
     
-    ofSetColor(0, 255, 0);
-    ofCircle(ofGetWidth() * x, ofGetHeight() * label, ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 3, 30));
+    
+    else {
+        ofSetColor(0, 255, 0);
+        ofNoFill();
+        ofRect(40, 475, 400, 40);
+        ofSetColor(0);
+        ofDrawBitmapString("Currently training regression... please wait.", 50, 500);
+    }
 }
 
 //--------------------------------------------------------------

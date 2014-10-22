@@ -39,7 +39,21 @@ public:
     ofxGraphicsFeatureMaker maker;
     vector<double> instance;
     vector<ofVec2f> points;
-    bool isCreatingInstance, lastInstanceIsTraining;
+    bool isCreatingInstance, lastInstanceIsTraining, isTrained;
     int lastLabel;
     
 };
+
+
+/*
+ TO-DO
+ =====
+ save and load training instances to disk
+ regression
+ clustering
+ opencv hand-tracking example
+ leapmotion example
+ --
+ tutorials
+ readme
+ */

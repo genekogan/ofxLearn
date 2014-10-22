@@ -3,6 +3,9 @@
 #include "ofMain.h"
 #include "ofxLearn.h"
 
+#define NUMPOINTS 500
+#define NUMCLUSTERS 5
+
 class ofApp : public ofBaseApp{
 public:
     void setup();
@@ -19,8 +22,10 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     
-    ofxLearn classifier;
-    vector<vector<double> > trainingExamples;
-    vector<int> trainingLabels;
+    ofxLearnThreaded learn;
+    vector<double> instances[NUMPOINTS];
+    vector<int> clusters;
+    
+    ofColor colors[NUMCLUSTERS];
+    ofEasyCam cam;
 };
-

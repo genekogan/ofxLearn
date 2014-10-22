@@ -28,23 +28,15 @@ typedef dlib::normalized_function<ovo_d_funct_type> ovo_funct_type;
 typedef dlib::mlp::kernel_1a_c                      mlp_trainer_type;
 
 
-// choose training mode: fast or accurate
-enum TrainMode {
-    FAST,
-    ACCURATE };
-
-// choose algorithm: classification, regression, clustering
-enum LearnMode {
-    CLASSIFICATION,
-    REGRESSION_SVM, // support vector machine
-    REGRESSION_MLP, // multilayer perceptron
-    CLUSTERING };
+// enums for training options
+enum TrainMode { FAST, ACCURATE };
+enum LearnMode { CLASSIFICATION, REGRESSION_SVM, REGRESSION_MLP, CLUSTERING };
 
 
-class ofxLearn : public ofThread
+
+class ofxLearn
 {
 public:
-    ~ofxLearn();
     ofxLearn();
     
     // data
@@ -54,10 +46,12 @@ public:
     int                 getNumberTrainingInstances() { return samples.size(); }
     
     // model
-    void                trainClassifier(LearnMode learnMode, TrainMode trainMode = ACCURATE);
-    void                trainClusters(int numClusters);
-    
+    void                trainClassifier(LearnMode learnMode = CLASSIFICATION, TrainMode trainMode = ACCURATE);
+    void                trainRegression(LearnMode learnMode = REGRESSION_SVM, TrainMode trainMode = ACCURATE);
     double              predict(vector<double> instance);
+    
+    // cluster
+    void                trainClusters(int numClusters);
     vector<int> &       getClusters();
 
     // IO
@@ -72,29 +66,16 @@ public:
     // mlp paramrters
     void                setMlpNumHiddenLayers(int n) { mlpNumHiddenLayers = n; }
     void                setMlpMaxSamples(int n) { mlpMaxSamples = n; }
-    void                setMlpTargetRmse(float rmse) { mlpTargetRmse = rmse; }
+    void                setMlpTargetRmse(float t) { mlpTargetRmse = t; }
     int                 getMlpNumHiddenLayers() { return mlpNumHiddenLayers; }
     int                 getMlpMaxSamples() { return mlpMaxSamples; }
-    int                 getMlpNumSamples() { return mlpSamples; }
     float               getMlpTargetRmse() { return mlpTargetRmse; }
-    float               getMlpRmse() { return mlpRmse; }
-
     
-    // get status
-    bool                getTraining() { return isTraining; }
-    bool                getTrained() { return isTrained; }
-    float               getProgress() { return progress; }
-    string              getStatusString() { return status; }
     
-
-private:
+protected:
     
-    void                threadedFunction();
-    
-    void                trainClassifierSvm(TrainMode trainMode);
     void                trainRegressionSvm(TrainMode trainMode);
     void                trainRegressionMlp(TrainMode trainMode);
-    void                trainKMeansClusters();
     
     // data
     vector<sample_type> samples;
@@ -110,18 +91,76 @@ private:
     funct_type          regression_function;
     mlp_trainer_type    *mlp_trainer;
     int                 mlpNumHiddenLayers;
-    float               mlpTargetRmse, mlpRmse;
-    int                 mlpMaxSamples, mlpSamples;
+    float               mlpTargetRmse;
+    int                 mlpMaxSamples;
     
     // clustering
-    int                 numClusters;
     vector<int>         clusters;
-        
-    // mode + status
+    int                 numClusters;
+    
+    // learn mode
     LearnMode           learnMode;
     TrainMode           trainMode;
-    bool                isTraining;
-    bool                isTrained;
-    float               progress;
-    string              status;
 };
+
+
+
+
+class ofxLearnThreaded : public ofxLearn, public ofThread
+{
+public:
+    ofxLearnThreaded() : ofxLearn() {
+        trained = false;
+    }
+    
+    bool getTrained() {return trained;}
+
+    void beginTrainClassifier(LearnMode learnMode = CLASSIFICATION, TrainMode trainMode = ACCURATE) {
+        this->learnMode = learnMode;
+        this->trainMode = trainMode;
+        trained = false;
+        startThread();
+    }
+    
+    void beginTrainRegression(LearnMode learnMode = REGRESSION_SVM, TrainMode trainMode = ACCURATE) {
+        this->learnMode = learnMode;
+        this->trainMode = trainMode;
+        trained = false;
+        startThread();
+    }
+    
+    void beginTrainClusters(int numClusters) {
+        this->learnMode = CLUSTERING;
+        this->numClusters = numClusters;
+        trained = false;
+        startThread();
+    }
+    
+    
+private:
+    
+    void threadedFunction() {
+        while (isThreadRunning()) {
+            if (lock()) {
+                if      (learnMode == CLASSIFICATION) {
+                    trainClassifier(learnMode, trainMode);
+                }
+                else if (learnMode == REGRESSION_SVM || learnMode == REGRESSION_MLP) {
+                    trainRegression(learnMode, trainMode);
+                }
+                else if (learnMode == CLUSTERING) {
+                    trainClusters(numClusters);
+                }
+                trained = true;
+                unlock();
+                stopThread();
+            }
+            else {
+                ofLogWarning("threadedFunction()") << "Unable to lock mutex.";
+            }
+        }
+    }
+    
+    bool trained;
+};
+

@@ -3,7 +3,8 @@
 #include "ofMain.h"
 #include "ofxLearn.h"
 
-class ofApp : public ofBaseApp{
+class ofApp : public ofBaseApp
+{
 public:
     void setup();
     void update();
@@ -19,8 +20,8 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     
-    ofxLearn classifier;
+    ofxLearnThreaded regression;
     vector<vector<double> > trainingExamples;
-    vector<int> trainingLabels;
+    vector<double> trainingLabels;
 };
 
