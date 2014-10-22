@@ -34,9 +34,12 @@ enum LearnMode { CLASSIFICATION, REGRESSION_SVM, REGRESSION_MLP, CLUSTERING };
 
 
 
+//--------------------
+
 class ofxLearn
 {
 public:
+    ~ofxLearn();
     ofxLearn();
     
     // data
@@ -106,6 +109,9 @@ protected:
 
 
 
+
+//--------------------
+
 class ofxLearnThreaded : public ofxLearn, public ofThread
 {
 public:
@@ -113,7 +119,9 @@ public:
         trained = false;
     }
     
-    bool getTrained() {return trained;}
+    bool getTrained() {
+        return trained;
+    }
 
     void beginTrainClassifier(LearnMode learnMode = CLASSIFICATION, TrainMode trainMode = ACCURATE) {
         this->learnMode = learnMode;
@@ -139,6 +147,8 @@ public:
     
 private:
     
+    bool trained;
+    
     void threadedFunction() {
         while (isThreadRunning()) {
             if (lock()) {
@@ -160,7 +170,5 @@ private:
             }
         }
     }
-    
-    bool trained;
 };
 

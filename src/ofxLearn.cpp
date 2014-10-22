@@ -296,3 +296,8 @@ void ofxLearn::loadModel(LearnMode learnMode, string path) {
     }
     ofLog(OF_LOG_VERBOSE, "loaded model: "+path);
 }
+
+//---------
+ofxLearn::~ofxLearn() {
+}
+
