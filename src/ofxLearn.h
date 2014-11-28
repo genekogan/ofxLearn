@@ -122,6 +122,11 @@ public:
     bool getTrained() {
         return trained;
     }
+    
+    void clear() {
+        trained = false;
+        clearTrainingInstances();
+    }
 
     void beginTrainClassifier(LearnMode learnMode = CLASSIFICATION, TrainMode trainMode = ACCURATE) {
         this->learnMode = learnMode;
