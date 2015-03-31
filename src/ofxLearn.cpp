@@ -225,7 +225,8 @@ double ofxLearn::predict(vector<double> instance) {
             
         default:
             break;
-    }    
+    }
+
     return prediction;
 }
 
