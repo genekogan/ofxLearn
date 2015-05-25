@@ -1,179 +1,253 @@
 #pragma once
 
 #include "ofMain.h"
+
 #include "dlib/svm.h"
 #include "dlib/mlp.h"
+#include "dlib/svm/svm_threaded.h"
+#include "dlib/matrix/matrix_abstract.h"
 
 
-// sample data
+
+// http://dlib.net/mlp_ex.cpp.html
+// http://dlib.net/svr_ex.cpp.html
+// http://dlib.net/multiclass_classification_ex.cpp.html
+
+
+
+// TODO
+//  x mlp
+//  x svr
+//  x multiclass svm
+//  - cross validation
+//  - grid parameter search
+//  - pca
+//  - sample from gaussian (http://dlib.net/3d_point_cloud_ex.cpp.html)
+//  -
+
+
+
+
+
+
+// sample type
 typedef dlib::matrix<double, 0, 1>                  sample_type;
-typedef dlib::radial_basis_kernel<sample_type>      kernel_type;
-typedef dlib::vector_normalizer<sample_type>        normalizer_type;
 
-// learning algorithm
-typedef dlib::krr_trainer<kernel_type>              svm_trainer_type;
+// kernel types
+typedef dlib::radial_basis_kernel<sample_type>      rbf_kernel_type;
+typedef dlib::polynomial_kernel<sample_type>        poly_kernel_type;
 
-// decision function
-typedef dlib::decision_function<kernel_type>        dec_funct_type;
-typedef dlib::normalized_function<dec_funct_type>   funct_type;
-
-// multiclass classification
+// trainer types
 typedef dlib::any_trainer<sample_type>              any_trainer;
 typedef dlib::one_vs_one_trainer<any_trainer>       ovo_trainer;
-typedef dlib::one_vs_one_decision_function
-                <ovo_trainer, dec_funct_type>       ovo_d_funct_type;
-typedef dlib::normalized_function<ovo_d_funct_type> ovo_funct_type;
-
-// multilayer perceptron (neural net)
 typedef dlib::mlp::kernel_1a_c                      mlp_trainer_type;
 
+// decision type?
+//typedef dlib::decision_function<poly_kernel_type>   df_poly_type;
+//typedef dlib::one_vs_one_decision_function<ovo_trainer, df_poly_type> ovo_df_poly_type;
+//typedef dlib::one_vs_one_decision_function<ovo_trainer, rbf_kernel_type> ovo_df_rbf_type;
 
-// enums for training options
-enum TrainMode { FAST, ACCURATE };
-enum LearnMode { CLASSIFICATION, REGRESSION_SVM, REGRESSION_MLP, CLUSTERING };
-
-
-
-//--------------------
 
 class ofxLearn
 {
 public:
-    ~ofxLearn();
-    ofxLearn();
+    ofxLearn() { }
+    virtual ~ofxLearn() { }
+    void svd();
     
-    // data
-    void                addTrainingInstance(vector<double> instance, double label);
-    void                addTrainingInstance(vector<double> instance);
-    void                clearTrainingInstances();
-    int                 getNumberTrainingInstances() { return samples.size(); }
+    virtual void train() { }
     
-    // model
-    void                trainClassifier(LearnMode learnMode = CLASSIFICATION, TrainMode trainMode = ACCURATE);
-    void                trainRegression(LearnMode learnMode = REGRESSION_SVM, TrainMode trainMode = ACCURATE);
-    double              predict(vector<double> instance);
+    inline sample_type vectorToSample(vector<double> sample_);
     
-    // cluster
-    void                trainClusters(int numClusters);
-    vector<int> &       getClusters();
+    double sinc(double x){return x == 0 ? 1 : sin(x)/x;}
+};
 
-    // IO
-    void                saveModel(string path);
-    void                loadModel(LearnMode learnMode, string path);
+
+
+class ofxLearnSupervised : public ofxLearn
+{
+public:
+    ofxLearnSupervised() : ofxLearn() {}
     
-    // get classifiers
-    ovo_funct_type      getClassifier()    { return classification_function; }
-    funct_type          getRegressionSvm() { return regression_function; }
-    mlp_trainer_type*   getRegressionMlp() { return mlp_trainer; }
+    void addTrainingInstance(vector<double> sample, double label);
+    void addSample(sample_type sample, double label);
+    void clearTrainingInstances();
     
-    // mlp paramrters
-    void                setMlpNumHiddenLayers(int n) { mlpNumHiddenLayers = n; }
-    void                setMlpMaxSamples(int n) { mlpMaxSamples = n; }
-    void                setMlpTargetRmse(float t) { mlpTargetRmse = t; }
-    int                 getMlpNumHiddenLayers() { return mlpNumHiddenLayers; }
-    int                 getMlpMaxSamples() { return mlpMaxSamples; }
-    float               getMlpTargetRmse() { return mlpTargetRmse; }
+    virtual double predict(vector<double> sample) { }
     
+protected:
+
+    vector<sample_type> samples;
+    vector<double> labels;
+    
+};
+
+class ofxLearnUnsupervised : public ofxLearn
+{
+public:
+    ofxLearnUnsupervised() : ofxLearn() {}
+    
+    void addTrainingInstance(vector<double> sample);
+    void addSample(sample_type sample);
+    void clearTrainingInstances();
     
 protected:
     
-    void                trainRegressionSvm(TrainMode trainMode);
-    void                trainRegressionMlp(TrainMode trainMode);
-    
-    // data
     vector<sample_type> samples;
-    vector<double>      labels;
-    normalizer_type     normalizer;
     
-    // classification
-    svm_trainer_type    svm_trainer;
-    ovo_trainer         trainer;
-    ovo_funct_type      classification_function;
+};
+
+
+class ofxLearnMLP : public ofxLearnSupervised
+{
+public:
+    ofxLearnMLP();
+    ~ofxLearnMLP();
     
-    // regression
-    funct_type          regression_function;
-    mlp_trainer_type    *mlp_trainer;
-    int                 mlpNumHiddenLayers;
-    float               mlpTargetRmse;
-    int                 mlpMaxSamples;
+    void train();
+    double predict(vector<double> sample);
+
+private:
     
-    // clustering
-    vector<int>         clusters;
-    int                 numClusters;
+    mlp_trainer_type *mlp_trainer;
     
-    // learn mode
-    LearnMode           learnMode;
-    TrainMode           trainMode;
+    int hiddenLayers;
+    float targetRmse;
+    int maxSamples;
+};
+
+
+
+class ofxLearnSVR : public ofxLearnSupervised
+{
+public:
+    ofxLearnSVR();
+    ~ofxLearnSVR();
+    
+    void train();
+    double predict(vector<double> sample);
+
+private:
+    
+    void trainCrossValidate() {
+        randomize_samples(samples, labels);
+        cout << "MSE and R-Squared: "<< cross_validate_regression_trainer(trainer, samples, labels, 5) << endl;
+    }
+    
+    dlib::svr_trainer<rbf_kernel_type> trainer;
+    dlib::decision_function<rbf_kernel_type> df;
+};
+
+
+class ofxLearnSVM : public ofxLearnSupervised
+{
+public:
+    ofxLearnSVM();
+    ~ofxLearnSVM();
+    
+    void train();
+    double predict(vector<double> sample);
+
+private:
+    
+    void generate_data (std::vector<sample_type>& samples,std::vector<double>& labels);
+    
+    ovo_trainer trainer;
+    
+    dlib::krr_trainer<rbf_kernel_type> rbf_trainer;
+    dlib::svm_nu_trainer<poly_kernel_type> poly_trainer;
+    
+    dlib::one_vs_one_decision_function<ovo_trainer> df;
+};
+
+
+class ofxLearnKMeans : public ofxLearnUnsupervised
+{
+public:
+    ofxLearnKMeans();
+    
+    void setNumClusters(int numClusters);
+    void train();
+    vector<int> & getClusters() {return clusters;}
+
+private:
+    vector<int> clusters;
+    int numClusters;
 };
 
 
 
 
-
-//--------------------
+////////////////////////
 
 class ofxLearnThreaded : public ofxLearn, public ofThread
 {
 public:
-    ofxLearnThreaded() : ofxLearn() {
+    ofxLearnThreaded() : ofxLearn()
+    {
         trained = false;
     }
     
-    bool getTrained() {
-        return trained;
+    ~ofxLearnThreaded() {
+        finishedTrainingE.clear();
+        finishedTrainingE.disable();
     }
     
-    void clear() {
-        trained = false;
-        clearTrainingInstances();
-    }
-
-    void beginTrainClassifier(LearnMode learnMode = CLASSIFICATION, TrainMode trainMode = ACCURATE) {
-        this->learnMode = learnMode;
-        this->trainMode = trainMode;
+    void beginTraining()
+    {
         trained = false;
         startThread();
     }
     
-    void beginTrainRegression(LearnMode learnMode = REGRESSION_SVM, TrainMode trainMode = ACCURATE) {
-        this->learnMode = learnMode;
-        this->trainMode = trainMode;
-        trained = false;
-        startThread();
+    template <typename L, typename M>
+    void beginTraining(L *listener, M method) {
+        ofAddListener(finishedTrainingE, listener, method);
+        beginTraining();
     }
     
-    void beginTrainClusters(int numClusters) {
-        this->learnMode = CLUSTERING;
-        this->numClusters = numClusters;
-        trained = false;
-        startThread();
-    }
-    
+    bool isTrained() {return trained;}
     
 private:
     
-    bool trained;
-    
-    void threadedFunction() {
-        while (isThreadRunning()) {
-            if (lock()) {
-                if      (learnMode == CLASSIFICATION) {
-                    trainClassifier(learnMode, trainMode);
-                }
-                else if (learnMode == REGRESSION_SVM || learnMode == REGRESSION_MLP) {
-                    trainRegression(learnMode, trainMode);
-                }
-                else if (learnMode == CLUSTERING) {
-                    trainClusters(numClusters);
-                }
+    void threadedFunction()
+    {
+        while (isThreadRunning())
+        {
+            if (lock())
+            {
+                threadedTrainer();
                 trained = true;
+                ofNotifyEvent(finishedTrainingE);
                 unlock();
                 stopThread();
             }
-            else {
+            else
+            {
                 ofLogWarning("threadedFunction()") << "Unable to lock mutex.";
             }
         }
     }
+    
+    virtual void threadedTrainer() {};
+    
+    bool trained;
+    
+    ofEvent<void> finishedTrainingE;
+};
+
+class ofxLearnMLPThreaded : public ofxLearnMLP, public ofxLearnThreaded {
+    void threadedTrainer() {ofxLearnMLP::train();}
+};
+
+class ofxLearnSVRThreaded : public ofxLearnSVR, public ofxLearnThreaded {
+    void threadedTrainer() {ofxLearnSVR::train();}
+};
+
+class ofxLearnSVMThreaded : public ofxLearnSVM, public ofxLearnThreaded {
+    void threadedTrainer() {ofxLearnSVM::train();}
+};
+
+class ofxLearnKMeansThreaded : public ofxLearnKMeans, public ofxLearnThreaded {
+    void threadedTrainer() {ofxLearnKMeans::train();}
 };
 
