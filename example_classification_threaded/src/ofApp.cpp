@@ -5,7 +5,7 @@ void ofApp::setup() {
     ofSetLogLevel(OF_LOG_VERBOSE);
     
     // add 1000 samples to training set
-    for (int i=0; i<8000; i++)
+    for (int i=0; i<5000; i++)
     {
         // our samples have two features: x, and y,
         // which are bound between (0, 1).
@@ -22,10 +22,10 @@ void ofApp::setup() {
         // with some noise thrown in
         int label;
         float distFromCenter = ofDist(sample[0], sample[1], 0.5, 0.5);
-        if (distFromCenter < ofRandom(0.1, 0.25)) {
+        if (distFromCenter < ofRandom(0.1, 0.3)) {
             label = 1;
         }
-        else if (distFromCenter < ofRandom(0.15, 0.45)) {
+        else if (distFromCenter < ofRandom(0.2, 0.5)) {
             label = 2;
         }
         else {
@@ -96,6 +96,8 @@ void ofApp::draw() {
         ofSetColor(0, 0, 255);
     }
     ofCircle(ofGetMouseX(), ofGetMouseY(), ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 5, 35));
+    ofSetColor(0);
+    ofDrawBitmapString("class "+ofToString(label), ofGetMouseX()-25, ofGetMouseY());
     
 }
 

@@ -8,11 +8,10 @@
 #include "dlib/matrix/matrix_abstract.h"
 
 
-
+// dlib examples
 // http://dlib.net/mlp_ex.cpp.html
 // http://dlib.net/svr_ex.cpp.html
 // http://dlib.net/multiclass_classification_ex.cpp.html
-
 
 
 // TODO
@@ -21,12 +20,9 @@
 //  x multiclass svm
 //  - cross validation
 //  - grid parameter search
-//  - pca
+//  - pca, svd
 //  - sample from gaussian (http://dlib.net/3d_point_cloud_ex.cpp.html)
 //  -
-
-
-
 
 
 
@@ -42,24 +38,17 @@ typedef dlib::any_trainer<sample_type>              any_trainer;
 typedef dlib::one_vs_one_trainer<any_trainer>       ovo_trainer;
 typedef dlib::mlp::kernel_1a_c                      mlp_trainer_type;
 
-// decision type?
-//typedef dlib::decision_function<poly_kernel_type>   df_poly_type;
-//typedef dlib::one_vs_one_decision_function<ovo_trainer, df_poly_type> ovo_df_poly_type;
-//typedef dlib::one_vs_one_decision_function<ovo_trainer, rbf_kernel_type> ovo_df_rbf_type;
-
 
 class ofxLearn
 {
 public:
     ofxLearn() { }
     virtual ~ofxLearn() { }
-    void svd();
+    //void svd();
     
     virtual void train() { }
     
     inline sample_type vectorToSample(vector<double> sample_);
-    
-    double sinc(double x){return x == 0 ? 1 : sin(x)/x;}
 };
 
 
@@ -129,11 +118,6 @@ public:
 
 private:
     
-    void trainCrossValidate() {
-        randomize_samples(samples, labels);
-        cout << "MSE and R-Squared: "<< cross_validate_regression_trainer(trainer, samples, labels, 5) << endl;
-    }
-    
     dlib::svr_trainer<rbf_kernel_type> trainer;
     dlib::decision_function<rbf_kernel_type> df;
 };
@@ -150,13 +134,10 @@ public:
 
 private:
     
-    void generate_data (std::vector<sample_type>& samples,std::vector<double>& labels);
-    
     ovo_trainer trainer;
     
     dlib::krr_trainer<rbf_kernel_type> rbf_trainer;
     dlib::svm_nu_trainer<poly_kernel_type> poly_trainer;
-    
     dlib::one_vs_one_decision_function<ovo_trainer> df;
 };
 
@@ -166,6 +147,7 @@ class ofxLearnKMeans : public ofxLearnUnsupervised
 public:
     ofxLearnKMeans();
     
+    int getNumClusters() {return numClusters;}
     void setNumClusters(int numClusters);
     void train();
     vector<int> & getClusters() {return clusters;}
@@ -200,7 +182,8 @@ public:
     }
     
     template <typename L, typename M>
-    void beginTraining(L *listener, M method) {
+    void beginTraining(L *listener, M method)
+    {
         ofAddListener(finishedTrainingE, listener, method);
         beginTraining();
     }

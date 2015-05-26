@@ -5,7 +5,7 @@ void ofApp::setup() {
     ofSetLogLevel(OF_LOG_VERBOSE);
     
     // add 1000 samples to training set
-    for (int i=0; i<1000; i++)
+    for (int i=0; i<5000; i++)
     {
         // our samples have two features: x, and y,
         // which are bound between (0, 1).
@@ -84,7 +84,9 @@ void ofApp::draw() {
         ofSetColor(0, 0, 255);
     }
     ofCircle(ofGetMouseX(), ofGetMouseY(), ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 5, 35));
-    
+    ofSetColor(0);
+    ofDrawBitmapString("class "+ofToString(label), ofGetMouseX()-25, ofGetMouseY());
+
 }
 
 //--------------------------------------------------------------
