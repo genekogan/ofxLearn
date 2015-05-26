@@ -25,5 +25,6 @@ Note also that classification and regression can sometimes take several minutes 
 
 ### To-do
 
-* implement grid-parameter search and cross-validation routines for parameter selection
-* principal component analysis 
+* grid-parameter search / cross-validation
+* PCA
+* GMM?
