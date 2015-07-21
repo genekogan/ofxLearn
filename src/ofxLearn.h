@@ -7,6 +7,9 @@
 #include "dlib/svm/svm_threaded.h"
 #include "dlib/matrix/matrix_abstract.h"
 
+#include "dlib/statistics/statistics.h"
+
+
 
 // dlib examples
 // http://dlib.net/mlp_ex.cpp.html
@@ -44,9 +47,16 @@ class ofxLearn
 public:
     ofxLearn() { }
     virtual ~ofxLearn() { }
-    //void svd();
+    void svd();
     
     virtual void train() { }
+    
+    double sinc(double x)
+    {
+        if (x == 0)
+            return 1;
+        return sin(x)/x;
+    }
     
     inline sample_type vectorToSample(vector<double> sample_);
 };
@@ -95,6 +105,14 @@ public:
     
     void train();
     double predict(vector<double> sample);
+
+    void setHiddenLayers(int hiddenLayers) {this->hiddenLayers = hiddenLayers;}
+    void setTargetRmse(float targetRmse) {this->targetRmse = targetRmse;}
+    void setMaxSamples(int maxSamples) {this->maxSamples = maxSamples;}
+
+    int getHiddenLayers() {return hiddenLayers;}
+    float getTargetRmse() {return targetRmse;}
+    int getMaxSamples() {return maxSamples;}
 
 private:
     

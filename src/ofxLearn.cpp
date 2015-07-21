@@ -1,3 +1,7 @@
+
+//https://www.projectrhea.org/rhea/index.php/PCA
+
+
 #include "ofxLearn.h"
 
 
@@ -211,7 +215,7 @@ void ofxLearnKMeans::train()
 }
 
 
-/*
+
  // some notes...
 void ofxLearn::svd()
 {
@@ -309,5 +313,60 @@ void ofxLearn::svd()
     cout << ms << endl;
     cout << mv << endl;
     cout << md << endl;
+
+    
+    
+    /////////////////////
+    dlib::running_stats<double> rs;
+    
+    double tp1 = 0;
+    double tp2 = 0;
+    
+    // We first generate the data and add it sequentially to our running_stats object.  We
+    // then print every fifth data point.
+    for (int x = 1; x <= 100; x++)
+    {
+        tp1 = x/100.0;
+        tp2 = sinc(pi*x/100.0);
+        rs.add(tp2);
+        
+        if(x % 5 == 0)
+        {
+            cout << " x = " << tp1 << " sinc(x) = " << tp2 << endl;
+        }
+    }
+    
+    // Finally, we compute and print the mean, variance, skewness, and excess kurtosis of
+    // our data.
+    
+    cout << endl;
+    cout << "Mean:           " << rs.mean() << endl;
+    cout << "Variance:       " << rs.variance() << endl;
+//    cout << "Skewness:       " << rs.skewness() << endl;
+//    cout << "Excess Kurtosis " << rs.ex_kurtosis() << endl;
+  
+    
+    dlib::vector_normalizer_pca<sample_type> pca1;
+    
+    vector<sample_type> vects;
+    
+    for (int i=0; i<850; i++) {
+        sample_type m2(5);
+        m2(0) = ofRandom(1);
+        m2(1) = m2(0) * (0.35 + ofRandom(-0.05, 0.05));
+        m2(2) = m2(0) * (0.35 + ofRandom(-0.15, 0.15)) + m2(1) * (0.45 + ofRandom(-0.11, 0.19));
+        m2(3) = m2(1) * (0.15 + ofRandom(-0.03, 0.03)) + m2(2) * (0.12 + ofRandom(-0.1, 0.1)) + m2(0) * (0.05 + ofRandom(-0.04, 0.04));
+        m2(4) = ofRandom(1);
+        vects.push_back(m2);
+    }
+
+
+    pca1.train(vects);
+
+    dlib::matrix<double> pca = pca1.pca_matrix();
+    
+    cout << "pca is " << endl;
+    cout << pca << endl;
+
 }
-*/
+
