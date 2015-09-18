@@ -166,6 +166,44 @@ void ofxLearnSVR::train()
     df = trainer.train(samples, labels);
 }
 
+void ofxLearnSVR::trainWithGridParameterSearch()
+{
+    ofLog(OF_LOG_NOTICE, "SVR cross validation is broken for now, just reverting to default train()... sorry!");
+    train();
+    return;
+    
+    // why is this not working right???  overfitting?
+    // just use train() for now.....
+    ofLog(OF_LOG_NOTICE, "Optimizing SVR via cross validation. this may take a while... ");
+    
+    randomize_samples(samples, labels);
+    
+    float best_gamma, best_c;
+    float best_accuracy = 0;
+    for (double gamma = 0.01; gamma <= 1.0; gamma *= 10) {
+        for (double c = 0.01; c <= 100.0; c *= 10){
+            trainer.set_kernel(rbf_kernel_type(gamma));
+            trainer.set_c(c);
+            trainer.set_epsilon_insensitivity(0.001);
+            const dlib::matrix<double> confusion_matrix = dlib::cross_validate_regression_trainer(trainer, samples, labels, 10);
+            double accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix);
+            ofLog(OF_LOG_NOTICE, "SVR accuracy (gamma = "+ofToString(gamma)+", C = "+ofToString(c)+" : accuracy = "+ofToString(accuracy));
+            if (accuracy > best_accuracy) {
+                best_accuracy = accuracy;
+                best_gamma = gamma;
+                best_c = c;
+            }
+        }
+    }
+    ofLog(OF_LOG_NOTICE, "Finished SVR grid parameter search with top accuracy : "+ofToString(best_accuracy)+", gamma = "+ofToString(best_gamma)+", C = "+ofToString(best_c));
+    
+    // finally, set best parameters and retrain
+    trainer.set_kernel(rbf_kernel_type(best_gamma));
+    trainer.set_c(best_c);
+    trainer.set_epsilon_insensitivity(0.001);
+    df = trainer.train(samples, labels);
+}
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -261,6 +299,48 @@ void ofxLearnKMeans::train()
     }
     return clusters;
 }
+
+
+//////////////////////////////////////////////////////////////////////
+////  Threaded learners
+
+ofxLearnThreaded::ofxLearnThreaded() : ofxLearn() {
+    trained = false;
+}
+
+ofxLearnThreaded::~ofxLearnThreaded() {
+    finishedTrainingE.clear();
+    finishedTrainingE.disable();
+}
+
+void ofxLearnThreaded::beginTraining()
+{
+    trained = false;
+    startThread();
+}
+
+void ofxLearnThreaded::threadedFunction()
+{
+    while (isThreadRunning())
+    {
+        if (lock())
+        {
+            threadedTrainer();
+            trained = true;
+            sleep(1000);
+            unlock();
+            stopThread();
+            ofNotifyEvent(finishedTrainingE);
+        }
+        else
+        {
+            ofLogWarning("threadedFunction()") << "Unable to lock mutex.";
+        }
+    }
+}
+
+
+
 
 
 

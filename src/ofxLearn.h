@@ -21,8 +21,8 @@
 //  x mlp
 //  x svr
 //  x multiclass svm
-//  - cross validation
-//  - grid parameter search
+//  x cross validation
+//  x grid parameter search
 //  - pca, svd
 //  - sample from gaussian (http://dlib.net/3d_point_cloud_ex.cpp.html)
 
@@ -128,6 +128,7 @@ public:
     ~ofxLearnSVR();
     
     void train();
+    void trainWithGridParameterSearch();
     double predict(vector<double> & sample);
     double predict(sample_type & sample);
     
@@ -183,58 +184,31 @@ private:
 class ofxLearnThreaded : public ofxLearn, public ofThread
 {
 public:
-    ofxLearnThreaded() : ofxLearn()
-    {
-        trained = false;
-    }
-    
-    ~ofxLearnThreaded() {
-        finishedTrainingE.clear();
-        finishedTrainingE.disable();
-    }
-    
-    void beginTraining()
-    {
-        trained = false;
-        startThread();
-    }
+    ofxLearnThreaded();
+    ~ofxLearnThreaded();
+
+    void beginTraining();
     
     template <typename L, typename M>
-    void beginTraining(L *listener, M method)
-    {
-        ofAddListener(finishedTrainingE, listener, method);
-        beginTraining();
-    }
+    void beginTraining(L *listener, M method);
     
     bool isTrained() {return trained;}
     
 private:
     
-    void threadedFunction()
-    {
-        while (isThreadRunning())
-        {
-            if (lock())
-            {
-                threadedTrainer();
-                trained = true;
-                sleep(1000);
-                unlock();
-                stopThread();
-                ofNotifyEvent(finishedTrainingE);
-            }
-            else
-            {
-                ofLogWarning("threadedFunction()") << "Unable to lock mutex.";
-            }
-        }
-    }
-    
+    void threadedFunction();
     virtual void threadedTrainer() {};
     
     bool trained;
     ofEvent<void> finishedTrainingE;
 };
+
+template <typename L, typename M>
+void ofxLearnThreaded::beginTraining(L *listener, M method)
+{
+    ofAddListener(finishedTrainingE, listener, method);
+    beginTraining();
+}
 
 class ofxLearnMLPThreaded : public ofxLearnMLP, public ofxLearnThreaded {
     void threadedTrainer() {ofxLearnMLP::train();}

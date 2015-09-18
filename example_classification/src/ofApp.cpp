@@ -40,7 +40,12 @@ void ofApp::setup() {
         classifier.addTrainingInstance(sample, label);
     }
     
-    classifier.train2();
+    classifier.train();
+    
+    // or you can make a grid parameter search to find the
+    // best parameters for training. this takes much longer
+    // but should be more accurate.
+    //classifier.trainWithGridParameterSearch()
 }
 
 //--------------------------------------------------------------
