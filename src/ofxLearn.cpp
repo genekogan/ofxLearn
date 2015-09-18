@@ -19,8 +19,7 @@ inline sample_type ofxLearn::vectorToSample(vector<double> sample_) {
 void ofxLearnSupervised::addTrainingInstance(vector<double> sample, double label)
 {
     if (label < 0.0 || label > 1.0) {
-        ofLog(OF_LOG_ERROR, "MLP can only take labels between 0.0 and 1.0");
-        //return;
+        ofLog(OF_LOG_WARNING, "Warning: continuous labels should be between 0.0 and 1.0");
     }
     sample_type samp(sample.size());
     for (int i = 0; i < sample.size(); i++) {
@@ -33,9 +32,9 @@ void ofxLearnSupervised::addTrainingInstance(vector<double> sample, double label
 void ofxLearnSupervised::addSample(sample_type sample, double label)
 {
     if (label < 0.0 || label > 1.0) {
-        ofLog(OF_LOG_ERROR, "MLP can only take labels between 0.0 and 1.0");
-        //return;
+        ofLog(OF_LOG_WARNING, "Warning: continuous labels should be between 0.0 and 1.0");
     }
+    
     samples.push_back(sample);
     labels.push_back(label);
 }
@@ -45,6 +44,7 @@ void ofxLearnSupervised::clearTrainingInstances()
     samples.clear();
     labels.clear();
 }
+
 
 //////////////////////////////////////////////////////////////////////
 ////  Unsupervised
@@ -90,13 +90,13 @@ void ofxLearnMLP::train()
         return;
     }
     
-    ofLog(OF_LOG_VERBOSE, "beginning to train regression function... ");
+    ofLog(OF_LOG_VERBOSE, "beginning to train regression ... ");
     
     vector<int> index;
     for (int i=0; i<samples.size(); i++) {
         index.push_back(i);
     }
-    
+
     mlp_trainer = new mlp_trainer_type(samples[0].size(), hiddenLayers);
     
     int iterations = 0;
@@ -116,16 +116,22 @@ void ofxLearnMLP::train()
         }
         rmse = sqrt(rmse / samples.size());
         
-        ofLog(OF_LOG_VERBOSE, "MLP, "+ofToString(hiddenLayers)+" layers, iteration "+ofToString(iterations)+", rmse "+ofToString(rmse));
+        ofLog(OF_LOG_NOTICE, "MLP, "+ofToString(hiddenLayers)+" layers, iteration "+ofToString(iterations)+", rmse "+ofToString(rmse));
         if (rmse <= targetRmse || iterations * samples.size() >= maxSamples) {
             stoppingCriteria = true;
         }
     }
 }
 
-double ofxLearnMLP::predict(vector<double> sample)
+double ofxLearnMLP::predict(vector<double> & sample)
 {
     return (*mlp_trainer)(vectorToSample(sample));
+}
+
+double ofxLearnMLP::predict(sample_type & sample)
+{
+    double theValue = (*mlp_trainer)(sample);
+    return theValue;
 }
 
 
@@ -142,9 +148,14 @@ ofxLearnSVR::~ofxLearnSVR()
     
 }
 
-double ofxLearnSVR::predict(vector<double> sample)
+double ofxLearnSVR::predict(vector<double> & sample)
 {
     return df(vectorToSample(sample));
+}
+
+double ofxLearnSVR::predict(sample_type & sample)
+{
+    return df(sample);
 }
 
 void ofxLearnSVR::train()
@@ -169,20 +180,57 @@ ofxLearnSVM::~ofxLearnSVM() {
     
 }
 
+void ofxLearnSVM::trainWithGridParameterSearch()
+{
+    ofLog(OF_LOG_NOTICE, "Optimizing SVM via cross validation. this may take a while... ");
+
+    randomize_samples(samples, labels);
+    
+    float best_gamma, best_lambda;
+    float best_accuracy = 0;
+    for (double gamma = 0.01; gamma <= 1.0; gamma *= 10) {
+        for (double lambda = 0.001; lambda <= 1.0; lambda *= 10){
+            rbf_trainer.set_kernel(rbf_kernel_type(gamma));
+            rbf_trainer.set_lambda(lambda);
+            trainer.set_trainer(rbf_trainer);
+            const dlib::matrix<double> confusion_matrix = dlib::cross_validate_multiclass_trainer(trainer, samples, labels, 10);
+            double accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix);
+            ofLog(OF_LOG_NOTICE, "SVM accuracy (gamma = "+ofToString(gamma)+", lambda = "+ofToString(lambda)+" : accuracy = "+ofToString(accuracy));
+            if (accuracy > best_accuracy) {
+                best_accuracy = accuracy;
+                best_gamma = gamma;
+                best_lambda = lambda;
+            }
+        }
+    }
+    ofLog(OF_LOG_NOTICE, "Finished SVM grid parameter search with top accuracy : "+ofToString(best_accuracy)+", gamma = "+ofToString(best_gamma)+", lambda = "+ofToString(best_lambda));
+
+    // finally, set best parameters and retrain
+    rbf_trainer.set_kernel(rbf_kernel_type(best_gamma));
+    rbf_trainer.set_lambda(best_lambda);
+    trainer.set_trainer(rbf_trainer);
+    df = trainer.train(samples, labels);
+}
+
 void ofxLearnSVM::train()
 {
-    poly_trainer.set_kernel(poly_kernel_type(0.1, 1, 2));
     rbf_trainer.set_kernel(rbf_kernel_type(0.1));
-
+    rbf_trainer.set_lambda(0.01);
     trainer.set_trainer(rbf_trainer);
+
+    //poly_trainer.set_kernel(poly_kernel_type(0.1, 1, 2));
     //trainer.set_trainer(poly_trainer, 1, 2);
     
     randomize_samples(samples, labels);
     df = trainer.train(samples, labels);
 }
 
-double ofxLearnSVM::predict(vector<double> sample) {
+double ofxLearnSVM::predict(vector<double> & sample) {
     return df(vectorToSample(sample));
+}
+
+double ofxLearnSVM::predict(sample_type & sample) {
+    return df(sample);
 }
 
 
@@ -216,11 +264,13 @@ void ofxLearnKMeans::train()
 
 
 
- // some notes...
+// some notes...
 void ofxLearn::svd()
 {
     // matrix expressions: http://dlib.net/matrix_ex.cpp.html
     
+    
+    // verifying....
     
     sample_type m;
     sample_type a;
@@ -315,7 +365,6 @@ void ofxLearn::svd()
     cout << md << endl;
 
     
-    
     /////////////////////
     dlib::running_stats<double> rs;
     
@@ -327,13 +376,9 @@ void ofxLearn::svd()
     for (int x = 1; x <= 100; x++)
     {
         tp1 = x/100.0;
-        tp2 = sinc(pi*x/100.0);
-        rs.add(tp2);
+        tp2 = pi*x == 0 ? 1 : sin(pi * x) / (pi * x);
         
-        if(x % 5 == 0)
-        {
-            cout << " x = " << tp1 << " sinc(x) = " << tp2 << endl;
-        }
+        rs.add(tp2);
     }
     
     // Finally, we compute and print the mean, variance, skewness, and excess kurtosis of
@@ -367,6 +412,5 @@ void ofxLearn::svd()
     
     cout << "pca is " << endl;
     cout << pca << endl;
-
 }
 

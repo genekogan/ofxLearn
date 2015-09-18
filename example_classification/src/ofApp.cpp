@@ -4,7 +4,7 @@
 void ofApp::setup() {
     ofSetLogLevel(OF_LOG_VERBOSE);
     
-    // add 1000 samples to training set
+    // add 5000 samples to training set
     for (int i=0; i<5000; i++)
     {
         // our samples have two features: x, and y,
@@ -40,7 +40,7 @@ void ofApp::setup() {
         classifier.addTrainingInstance(sample, label);
     }
     
-    classifier.train();
+    classifier.train2();
 }
 
 //--------------------------------------------------------------

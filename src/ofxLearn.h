@@ -25,7 +25,6 @@
 //  - grid parameter search
 //  - pca, svd
 //  - sample from gaussian (http://dlib.net/3d_point_cloud_ex.cpp.html)
-//  -
 
 
 
@@ -51,13 +50,6 @@ public:
     
     virtual void train() { }
     
-    double sinc(double x)
-    {
-        if (x == 0)
-            return 1;
-        return sin(x)/x;
-    }
-    
     inline sample_type vectorToSample(vector<double> sample_);
 };
 
@@ -72,7 +64,8 @@ public:
     void addSample(sample_type sample, double label);
     void clearTrainingInstances();
     
-    virtual double predict(vector<double> sample) { }
+    virtual double predict(vector<double> & sample) { }
+    virtual double predict(sample_type & sample) { }
     
 protected:
 
@@ -104,8 +97,9 @@ public:
     ~ofxLearnMLP();
     
     void train();
-    double predict(vector<double> sample);
-
+    double predict(vector<double> & sample);
+    double predict(sample_type & sample);
+    
     void setHiddenLayers(int hiddenLayers) {this->hiddenLayers = hiddenLayers;}
     void setTargetRmse(float targetRmse) {this->targetRmse = targetRmse;}
     void setMaxSamples(int maxSamples) {this->maxSamples = maxSamples;}
@@ -114,6 +108,8 @@ public:
     float getTargetRmse() {return targetRmse;}
     int getMaxSamples() {return maxSamples;}
 
+    mlp_trainer_type * getTrainer() {return mlp_trainer;}
+    
 private:
     
     mlp_trainer_type *mlp_trainer;
@@ -132,8 +128,9 @@ public:
     ~ofxLearnSVR();
     
     void train();
-    double predict(vector<double> sample);
-
+    double predict(vector<double> & sample);
+    double predict(sample_type & sample);
+    
 private:
     
     dlib::svr_trainer<rbf_kernel_type> trainer;
@@ -148,8 +145,11 @@ public:
     ~ofxLearnSVM();
     
     void train();
-    double predict(vector<double> sample);
-
+    void trainWithGridParameterSearch();
+    
+    double predict(vector<double> & sample);
+    double predict(sample_type & sample);
+    
 private:
     
     ovo_trainer trainer;
@@ -218,9 +218,10 @@ private:
             {
                 threadedTrainer();
                 trained = true;
-                ofNotifyEvent(finishedTrainingE);
+                sleep(1000);
                 unlock();
                 stopThread();
+                ofNotifyEvent(finishedTrainingE);
             }
             else
             {
@@ -232,7 +233,6 @@ private:
     virtual void threadedTrainer() {};
     
     bool trained;
-    
     ofEvent<void> finishedTrainingE;
 };
 
