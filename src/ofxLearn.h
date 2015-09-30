@@ -50,6 +50,9 @@ public:
     
     virtual void train() { }
     
+    virtual void saveModel(string path) { }
+    virtual void loadModel(string path) { }
+    
     inline sample_type vectorToSample(vector<double> sample_);
 };
 
@@ -151,12 +154,30 @@ public:
     double predict(vector<double> & sample);
     double predict(sample_type & sample);
     
+    void saveModel(string path)
+    {
+        const char *filepath = path.c_str();
+        ofstream fout(filepath, ios::binary);
+        dlib::one_vs_one_decision_function<ovo_trainer, dlib::decision_function<rbf_kernel_type> > df2, df3;
+        df2 = df;
+        serialize(df2, fout);
+
+    }
+    
+    void loadModel(string path) {
+        const char *filepath = path.c_str();
+        ifstream fin(filepath, ios::binary);
+        dlib::one_vs_one_decision_function<ovo_trainer, dlib::decision_function<rbf_kernel_type> > df2;
+        dlib::deserialize(df2, fin);
+        df = df2;
+    }
+
 private:
     
     ovo_trainer trainer;
     
+    //dlib::svm_nu_trainer<poly_kernel_type> poly_trainer;
     dlib::krr_trainer<rbf_kernel_type> rbf_trainer;
-    dlib::svm_nu_trainer<poly_kernel_type> poly_trainer;
     dlib::one_vs_one_decision_function<ovo_trainer> df;
 };
 
