@@ -18,13 +18,10 @@ Each has a separate class for threading (see the `_threaded` examples).
 
 ### Usage
 
-Add **only** ofxLearn's source folder (ofxLearn/src) to your project, but don't add the "libs" folder containing dlib, as it will cause naming collisions. Instead, add `../../../addons/ofxLearn/libs/` to your header search paths. In XCode, this can be found in the Build Settings of your project file.
-
-Note also that classification and regression can sometimes take several minutes to complete, depending on the complexity and size of the data.
+See examples for usage of classification, regression, and clustering. Depending on the size and complexity of your data, training can take a long time, and it will freeze the application, unless you use the threaded learners. The examples ending with _threaded run the training in a separate thread and alert you with a callback function when they are done. 
 
 
 ### To-do
 
-* grid-parameter search / cross-validation
+* grid-parameter search / cross-validation 
 * PCA
-* GMM?
