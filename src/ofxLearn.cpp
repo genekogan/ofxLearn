@@ -309,7 +309,6 @@ ofxLearnThreaded::ofxLearnThreaded() : ofxLearn() {
 }
 
 ofxLearnThreaded::~ofxLearnThreaded() {
-    finishedTrainingE.clear();
     finishedTrainingE.disable();
 }
 
