@@ -28,7 +28,6 @@ class ofxLearn {
 public:
     ofxLearn() { }
     virtual ~ofxLearn() { }
-    void svd();
     virtual void train() { }
     virtual void saveModel(string path) { }
     virtual void loadModel(string path) { }

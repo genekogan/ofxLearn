@@ -22,7 +22,7 @@ void ofApp::setup(){
     }
     
     // Project a new point onto the principal components
-    vector<double> newSample = {9, 8, 6, 3, -1.0};//{9.05, 8.1, 5.9, 3.1, -1.2};//{1, 0.5, 3, 1, 5};
+    vector<double> newSample = {5, 4, 1, -2, 3.2};
     vector<double> newSampleProjected = learn.project(newSample);
     cout << "New sample projected " << ofToString(newSampleProjected) << endl;
 

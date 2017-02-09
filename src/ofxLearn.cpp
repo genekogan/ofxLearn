@@ -387,7 +387,8 @@ vector<double> ofxLearnPCA::project(vector<double> sample)
     for (int i=0; i<sample.size(); i++) {
         p(0, i) = sample[i];
     }
-    q = (p * dlib::inv(E) * V);
+    //q = (p * dlib::inv(E) * V);
+    q = (p * V);
     vector<double> projectedSample;
     for (int i=0; i<q.nc(); i++) {
         projectedSample.push_back(q(0, i));
@@ -397,13 +398,21 @@ vector<double> ofxLearnPCA::project(vector<double> sample)
 
 vector<vector<double> > ofxLearnPCA::getProjectedSamples()
 {
-    int numSamples = U.nr();
-    int numComponents = U.nc();
+    int numFeatures = samples[0].size();
+    int numSamples = samples.size();
     vector<vector<double> > projectedSamples;
+
     for (int i=0; i<numSamples; i++) {
+        matrix p, q;
+        p.set_size(1, numFeatures);
+        for (int j=0; j<numFeatures; j++) {
+            p(0, j) = samples[i](j);
+        }
+        //q = (p * dlib::inv(E) * V);
+        q = (p * V);
         vector<double> projectedSample;
-        for (int j=0; j<numComponents; j++){
-            projectedSample.push_back(U(i, j));
+        for (int i=0; i<q.nc(); i++) {
+            projectedSample.push_back(q(0, i));
         }
         projectedSamples.push_back(projectedSample);
     }
@@ -448,215 +457,3 @@ void ofxLearnThreaded::threadedFunction()
         }
     }
 }
-
-
-
-
-
-/*
- subtract mean of columns
- divide data by sqrt(N-1);
- */
-
-
-// some notes...
-void ofxLearn::svd()
-{
-    int numPoints = 7;
-    int numColumns = 5;
-    int numComponents = 4;
-    
-    
-    
-    
-    
-    dlib::matrix<double,0,0> DATA;
-    dlib::matrix<double,0,0> U;
-    dlib::matrix<double,0,0> E;
-    dlib::matrix<double,0,0> V;
-
-    DATA.set_size(numPoints, numColumns);
-    
-    
-    
-    DATA(0, 0) = 1;         // high 1,3,5
-    DATA(0, 1) = 0.5;
-    DATA(0, 2) = 3;
-    DATA(0, 3) = 1;
-    DATA(0, 4) = 5;
-    
-    DATA(1, 0) = 2;         // 1+2 similar
-    DATA(1, 1) = 0.7;
-    DATA(1, 2) = 3.3;
-    DATA(1, 3) = 0.9;
-    DATA(1, 4) = 4.2;
-    
-    DATA(2, 0) = 1;         // high 2,4,5
-    DATA(2, 1) = 4;
-    DATA(2, 2) = -0.4;
-    DATA(2, 3) = 9;
-    DATA(2, 4) = 3.2;
-    
-    DATA(3, 0) = 1.5;       // 3+4 similar
-    DATA(3, 1) = 5.2;
-    DATA(3, 2) = 0.1;
-    DATA(3, 3) = 8;
-    DATA(3, 4) = 2.6;
-    
-    DATA(4, 0) = 0.2;       // high 5
-    DATA(4, 1) = -0.5;
-    DATA(4, 2) = 0.3;
-    DATA(4, 3) = -1.2;
-    DATA(4, 4) = 7.4;
-    
-    DATA(5, 0) = 0.2;      // 5+6 similar
-    DATA(5, 1) = -0.5;
-    DATA(5, 2) = 0.31;
-    DATA(5, 3) = -1.2;
-    DATA(5, 4) = 7.3;
-    
-    DATA(6, 0) = 9;       // descending from 1 to 5
-    DATA(6, 1) = 8;
-    DATA(6, 2) = 6;
-    DATA(6, 3) = 3;
-    DATA(6, 4) = -1.0;
-    
-    
-    dlib::svd(DATA, U, E, V);
-    
-    
-    
-    cout << "===== DATA ====" <<endl;
-    cout << DATA << endl;
-    cout << "U"<<endl;
-    cout << U << endl;
-    cout << "E"<<endl;
-    cout << E << endl;
-    cout << "V"<<endl;
-    cout << V << endl;
-    cout << "===== DATA ====" <<endl;
-    
-    
-    
-    // SORT EIGENVECTORS
-    vector<size_t> idx(E.nc());
-    iota(idx.begin(), idx.end(), 0);
-    sort(idx.begin(), idx.end(), [&E](size_t i1, size_t i2) {return E(i1, i1) > E(i2, i2);});
-    
-    
-    // PCA KEEP COMPONENTS
-    
-//    dlib::matrix<double, 7, numComponents> Us;
-//    dlib::matrix<double, numComponents, numComponents> Es;
-//    dlib::matrix<double, numColumns, numComponents> Vs;
-
-    dlib::matrix<double, 0, 0> Us;
-    dlib::matrix<double, 0, 0> Es;
-    dlib::matrix<double, 0, 0> Vs;
-
-    Us.set_size(7, numComponents);
-    Es.set_size(numComponents, numComponents);
-    Vs.set_size(numComponents, numComponents);
-    //    for (int c=0; c<numComponents; c++) {
-    //        dlib::set_colm(Us, dlib::colm(U, c));
-    //    }
-    
-    
-    Es = dlib::zeros_matrix<double>(numComponents, numComponents);
-    Vs = dlib::zeros_matrix<double>(numColumns, numComponents);
-    
-    // reduce U
-    for (int c=0; c<numComponents; c++) {
-        for (int r=0; r<numPoints; r++) {
-            Us(r, c) = U(r, idx[c]);
-        }
-    }
-    
-    // reduce E
-    for (int i=0; i<numComponents; i++) {
-        Es(i, i) = E(idx[i], idx[i]);
-    }
-    
-    // reduce V
-    for (int c=0; c<numComponents; c++) {
-        for (int r=0; r<numColumns; r++) {
-            Vs(r, c) = V(r, idx[c]);
-        }
-    }
-    
-    
-    
-    cout << "------"<<endl;
-    cout << Us << endl;
-    cout << "------"<<endl;
-    cout << Es << endl;
-    cout << "------"<<endl;
-    cout << Vs << endl;
-    
-    cout << "------"<<endl;
-    cout << "------ REMIND DATA =-----"<<endl;
-    cout << DATA << endl;
-    cout << " - correlations " << endl;
-//    myCor(U);
-    
-    cout << "------ RECONS =-----"<<endl;
-    dlib::matrix<double,0,0> Dr = (U * E * dlib::trans(V));
-    cout << Dr << endl;
-    cout << " - correlations " << endl;
-//    myCor(Dr);
-    
-    
-    cout << "------ LAST =-----"<<endl;
-    dlib::matrix<double,0,0> Drr = (Us * Es * dlib::trans(Vs));
-    cout << Drr << endl;
-    cout << " - correlations " << endl;
-//    myCor(Drr);
-    
-    
-    cout << "-----PROJECTION -----"<<endl;
-    
-    dlib::matrix<double, 0, 0> q;
-    q.set_size(1, numColumns);
-    q(0, 0) = 1;
-    q(0, 1) = 0.5;
-    q(0, 2) = 3;
-    q(0, 3) = 1;
-    q(0, 4) = 5;
-    
-    cout << q << endl;
-    
-    cout << " --- " << endl;
-    
-    cout << (q * Vs) << endl;
-    
-    
-    
-    ofExit();
-    
-    
-    
-    
-    // SVD links
-    // http://math.stackexchange.com/questions/3869/what-is-the-intuitive-relationship-between-svd-and-pca
-    // http://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm
-    
-    // code at bottom:
-    // http://arxiv.org/pdf/1404.1100.pdf
-    
-    // http://stats.stackexchange.com/questions/134282/relationship-between-svd-and-pca-how-to-use-svd-to-perform-pca
-    // http://www3.cs.stonybrook.edu/~sael/teaching/cse549/Slides/CSE549_16.pdf
-    // http://www.doc.ic.ac.uk/~dfg/ProbabilisticInference/IDAPILecture15.pdf
-    
-    // numerical example
-    // http://www.itl.nist.gov/div898/handbook/pmc/section5/pmc552.htm
-    
-    // matrix calc
-    // http://www.bluebit.gr/matrix-calculator/
-    
-    
-    
-    //http://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm
-    
-    
-}
-
