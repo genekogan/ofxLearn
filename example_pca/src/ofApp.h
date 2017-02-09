@@ -21,5 +21,5 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		
     
-    ofxLearn learn;
+    ofxLearnPCA learn;
 };

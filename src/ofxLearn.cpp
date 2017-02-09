@@ -16,7 +16,7 @@ inline sample_type ofxLearn::vectorToSample(vector<double> sample_) {
 //////////////////////////////////////////////////////////////////////
 ////  Supervised
 
-void ofxLearnSupervised::addTrainingInstance(vector<double> sample, double label)
+void ofxLearnSupervised::addSample(vector<double> sample, double label)
 {
     if (label < 0.0 || label > 1.0) {
         ofLog(OF_LOG_WARNING, "Warning: continuous labels should be between 0.0 and 1.0");
@@ -49,7 +49,7 @@ void ofxLearnSupervised::clearTrainingInstances()
 //////////////////////////////////////////////////////////////////////
 ////  Unsupervised
 
-void ofxLearnUnsupervised::addTrainingInstance(vector<double> sample)
+void ofxLearnUnsupervised::addSample(vector<double> sample)
 {
     sample_type samp(sample.size());
     for (int i = 0; i < sample.size(); i++) {
@@ -96,7 +96,7 @@ void ofxLearnMLP::train()
     for (int i=0; i<samples.size(); i++) {
         index.push_back(i);
     }
-
+    
     mlp_trainer = new mlp_trainer_type(samples[0].size(), hiddenLayers);
     
     int iterations = 0;
@@ -221,7 +221,7 @@ ofxLearnSVM::~ofxLearnSVM() {
 void ofxLearnSVM::trainWithGridParameterSearch()
 {
     ofLog(OF_LOG_NOTICE, "Optimizing SVM via cross validation. this may take a while... ");
-
+    
     randomize_samples(samples, labels);
     
     float best_gamma, best_lambda;
@@ -242,7 +242,7 @@ void ofxLearnSVM::trainWithGridParameterSearch()
         }
     }
     ofLog(OF_LOG_NOTICE, "Finished SVM grid parameter search with top accuracy : "+ofToString(best_accuracy)+", gamma = "+ofToString(best_gamma)+", lambda = "+ofToString(best_lambda));
-
+    
     // finally, set best parameters and retrain
     rbf_trainer.set_kernel(rbf_kernel_type(best_gamma));
     rbf_trainer.set_lambda(best_lambda);
@@ -255,7 +255,7 @@ void ofxLearnSVM::train()
     rbf_trainer.set_kernel(rbf_kernel_type(0.1));
     rbf_trainer.set_lambda(0.01);
     trainer.set_trainer(rbf_trainer);
-
+    
     //poly_trainer.set_kernel(poly_kernel_type(0.1, 1, 2));
     //trainer.set_trainer(poly_trainer, 1, 2);
     
@@ -270,6 +270,23 @@ double ofxLearnSVM::predict(vector<double> & sample) {
 double ofxLearnSVM::predict(sample_type & sample) {
     return df(sample);
 }
+
+void ofxLearnSVM::saveModel(string path) {
+    const char *filepath = path.c_str();
+    ofstream fout(filepath, ios::binary);
+    dlib::one_vs_one_decision_function<ovo_trainer, dlib::decision_function<rbf_kernel_type> > df2, df3;
+    df2 = df;
+    serialize(df2, fout);
+}
+
+void ofxLearnSVM::loadModel(string path) {
+    const char *filepath = path.c_str();
+    ifstream fin(filepath, ios::binary);
+    dlib::one_vs_one_decision_function<ovo_trainer, dlib::decision_function<rbf_kernel_type> > df2;
+    dlib::deserialize(df2, fin);
+    df = df2;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -299,6 +316,100 @@ void ofxLearnKMeans::train()
     }
     return clusters;
 }
+
+
+//////////////////////////////////////////////////////////////////////
+////  Principal component analysis via singular value decomposition
+
+ofxLearnPCA::ofxLearnPCA() : ofxLearnUnsupervised()
+{
+    
+}
+
+void ofxLearnPCA::pca(int numComponents)
+{
+    if (samples.size() == 0) {
+        ofLog(OF_LOG_ERROR, "No samples added yet");
+        return;
+    }
+    
+    int numFeatures = samples[0].size();
+    int numSamples = samples.size();
+    
+    matrix data;
+    data.set_size(numSamples, numFeatures);
+    
+    for (int i=0; i<numSamples; i++) {
+        for (int j=0; j<numFeatures; j++) {
+            data(i, j) = samples[i](j);
+        }
+    }
+    
+    // compute singular value decomposition
+    dlib::svd(data, U, E, V);
+    
+    // sort eigenvalues
+    vector<size_t> idx(E.nc());
+    iota(idx.begin(), idx.end(), 0);
+    sort(idx.begin(), idx.end(), [this](size_t i1, size_t i2) {return E(i1, i1) > E(i2, i2);});
+    
+    // copy top-numComponents vectors of U, E, and V
+    // into smaller Ur, Er, and Vr, then overwrite
+    
+    matrix Ur, Er, Vr;
+    
+    Ur.set_size(numSamples, numComponents);
+    Er.set_size(numComponents, numComponents);
+    Vr.set_size(numComponents, numComponents);
+    
+    Er = dlib::zeros_matrix<double>(numComponents, numComponents);
+    Vr = dlib::zeros_matrix<double>(numFeatures, numComponents);
+    
+    for (int c=0; c<numComponents; c++) {
+        for (int r=0; r<numSamples; r++) {
+            Ur(r, c) = U(r, idx[c]);
+        }
+        for (int r=0; r<numFeatures; r++) {
+            Vr(r, c) = V(r, idx[c]);
+        }
+        Er(c, c) = E(idx[c], idx[c]);
+    }
+    
+    U = Ur;
+    E = Er;
+    V = Vr;
+}
+
+vector<double> ofxLearnPCA::project(vector<double> sample)
+{
+    matrix p, q;
+    p.set_size(1, sample.size());
+    for (int i=0; i<sample.size(); i++) {
+        p(0, i) = sample[i];
+    }
+    q = (p * dlib::inv(E) * V);
+    vector<double> projectedSample;
+    for (int i=0; i<q.nc(); i++) {
+        projectedSample.push_back(q(0, i));
+    }
+    return projectedSample;
+}
+
+vector<vector<double> > ofxLearnPCA::getProjectedSamples()
+{
+    int numSamples = U.nr();
+    int numComponents = U.nc();
+    vector<vector<double> > projectedSamples;
+    for (int i=0; i<numSamples; i++) {
+        vector<double> projectedSample;
+        for (int j=0; j<numComponents; j++){
+            projectedSample.push_back(U(i, j));
+        }
+        projectedSamples.push_back(projectedSample);
+    }
+    return projectedSamples;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -342,61 +453,186 @@ void ofxLearnThreaded::threadedFunction()
 
 
 
+/*
+ subtract mean of columns
+ divide data by sqrt(N-1);
+ */
+
 
 // some notes...
 void ofxLearn::svd()
 {
-    // matrix expressions: http://dlib.net/matrix_ex.cpp.html
-    
-    
-    // verifying....
-    
-    sample_type m;
-    sample_type a;
-    sample_type b;
-    sample_type c;
+    int numPoints = 7;
+    int numColumns = 5;
+    int numComponents = 4;
     
     
     
-    dlib::matrix<double,2,2> mm;
-    mm(0, 0) = 5;
-    mm(0, 1) = 7;
-    mm(1, 0) = 1;
-    mm(1, 1) = 3;
     
-    //    cout << mm << endl;
     
-    dlib::matrix<double,2,2> mmi = dlib::inv(mm);
-    cout << mm << endl;
-    cout << mmi << endl;
+    dlib::matrix<double,0,0> DATA;
+    dlib::matrix<double,0,0> U;
+    dlib::matrix<double,0,0> E;
+    dlib::matrix<double,0,0> V;
+
+    DATA.set_size(numPoints, numColumns);
     
     
     
-    dlib::matrix<double,3,4> mm1;
-    dlib::matrix<double,3,4> mms;
-    dlib::matrix<double,4,4> mmv;
-    dlib::matrix<double,4,4> mmd;
+    DATA(0, 0) = 1;         // high 1,3,5
+    DATA(0, 1) = 0.5;
+    DATA(0, 2) = 3;
+    DATA(0, 3) = 1;
+    DATA(0, 4) = 5;
     
-    mm1(0, 0) = 4;
-    mm1(0, 1) = 2;
-    mm1(0, 2) = 8;
-    mm1(0, 3) = 9;
-    mm1(1, 0) = 3;
-    mm1(1, 1) = 5;
-    mm1(1, 2) = 2;
-    mm1(1, 3) = 1;
-    mm1(2, 0) = 9;
-    mm1(2, 1) = 4;
-    mm1(2, 2) = 4;
-    mm1(2, 3) = 3;
+    DATA(1, 0) = 2;         // 1+2 similar
+    DATA(1, 1) = 0.7;
+    DATA(1, 2) = 3.3;
+    DATA(1, 3) = 0.9;
+    DATA(1, 4) = 4.2;
+    
+    DATA(2, 0) = 1;         // high 2,4,5
+    DATA(2, 1) = 4;
+    DATA(2, 2) = -0.4;
+    DATA(2, 3) = 9;
+    DATA(2, 4) = 3.2;
+    
+    DATA(3, 0) = 1.5;       // 3+4 similar
+    DATA(3, 1) = 5.2;
+    DATA(3, 2) = 0.1;
+    DATA(3, 3) = 8;
+    DATA(3, 4) = 2.6;
+    
+    DATA(4, 0) = 0.2;       // high 5
+    DATA(4, 1) = -0.5;
+    DATA(4, 2) = 0.3;
+    DATA(4, 3) = -1.2;
+    DATA(4, 4) = 7.4;
+    
+    DATA(5, 0) = 0.2;      // 5+6 similar
+    DATA(5, 1) = -0.5;
+    DATA(5, 2) = 0.31;
+    DATA(5, 3) = -1.2;
+    DATA(5, 4) = 7.3;
+    
+    DATA(6, 0) = 9;       // descending from 1 to 5
+    DATA(6, 1) = 8;
+    DATA(6, 2) = 6;
+    DATA(6, 3) = 3;
+    DATA(6, 4) = -1.0;
     
     
-    dlib::svd(mm1, mms, mmv, mmd);
-    cout << "=========="<<endl;
-    cout << mm1 << endl;
-    cout << mms << endl;
-    cout << mmv << endl;
-    cout << mmd << endl;
+    dlib::svd(DATA, U, E, V);
+    
+    
+    
+    cout << "===== DATA ====" <<endl;
+    cout << DATA << endl;
+    cout << "U"<<endl;
+    cout << U << endl;
+    cout << "E"<<endl;
+    cout << E << endl;
+    cout << "V"<<endl;
+    cout << V << endl;
+    cout << "===== DATA ====" <<endl;
+    
+    
+    
+    // SORT EIGENVECTORS
+    vector<size_t> idx(E.nc());
+    iota(idx.begin(), idx.end(), 0);
+    sort(idx.begin(), idx.end(), [&E](size_t i1, size_t i2) {return E(i1, i1) > E(i2, i2);});
+    
+    
+    // PCA KEEP COMPONENTS
+    
+//    dlib::matrix<double, 7, numComponents> Us;
+//    dlib::matrix<double, numComponents, numComponents> Es;
+//    dlib::matrix<double, numColumns, numComponents> Vs;
+
+    dlib::matrix<double, 0, 0> Us;
+    dlib::matrix<double, 0, 0> Es;
+    dlib::matrix<double, 0, 0> Vs;
+
+    Us.set_size(7, numComponents);
+    Es.set_size(numComponents, numComponents);
+    Vs.set_size(numComponents, numComponents);
+    //    for (int c=0; c<numComponents; c++) {
+    //        dlib::set_colm(Us, dlib::colm(U, c));
+    //    }
+    
+    
+    Es = dlib::zeros_matrix<double>(numComponents, numComponents);
+    Vs = dlib::zeros_matrix<double>(numColumns, numComponents);
+    
+    // reduce U
+    for (int c=0; c<numComponents; c++) {
+        for (int r=0; r<numPoints; r++) {
+            Us(r, c) = U(r, idx[c]);
+        }
+    }
+    
+    // reduce E
+    for (int i=0; i<numComponents; i++) {
+        Es(i, i) = E(idx[i], idx[i]);
+    }
+    
+    // reduce V
+    for (int c=0; c<numComponents; c++) {
+        for (int r=0; r<numColumns; r++) {
+            Vs(r, c) = V(r, idx[c]);
+        }
+    }
+    
+    
+    
+    cout << "------"<<endl;
+    cout << Us << endl;
+    cout << "------"<<endl;
+    cout << Es << endl;
+    cout << "------"<<endl;
+    cout << Vs << endl;
+    
+    cout << "------"<<endl;
+    cout << "------ REMIND DATA =-----"<<endl;
+    cout << DATA << endl;
+    cout << " - correlations " << endl;
+//    myCor(U);
+    
+    cout << "------ RECONS =-----"<<endl;
+    dlib::matrix<double,0,0> Dr = (U * E * dlib::trans(V));
+    cout << Dr << endl;
+    cout << " - correlations " << endl;
+//    myCor(Dr);
+    
+    
+    cout << "------ LAST =-----"<<endl;
+    dlib::matrix<double,0,0> Drr = (Us * Es * dlib::trans(Vs));
+    cout << Drr << endl;
+    cout << " - correlations " << endl;
+//    myCor(Drr);
+    
+    
+    cout << "-----PROJECTION -----"<<endl;
+    
+    dlib::matrix<double, 0, 0> q;
+    q.set_size(1, numColumns);
+    q(0, 0) = 1;
+    q(0, 1) = 0.5;
+    q(0, 2) = 3;
+    q(0, 3) = 1;
+    q(0, 4) = 5;
+    
+    cout << q << endl;
+    
+    cout << " --- " << endl;
+    
+    cout << (q * Vs) << endl;
+    
+    
+    
+    ofExit();
+    
     
     
     
@@ -421,75 +657,6 @@ void ofxLearn::svd()
     
     //http://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm
     
-    dlib::matrix<double,4,2> m1;
-    dlib::matrix<double,4,2> ms;
-    dlib::matrix<double,2,2> mv;
-    dlib::matrix<double,2,2> md;
     
-    m1(0, 0) = 2;
-    m1(0, 1) = 4;
-    m1(1, 0) = 1;
-    m1(1, 1) = 3;
-    m1(2, 0) = 0;
-    m1(2, 1) = 0;
-    m1(3, 0) = 0;
-    m1(3, 1) = 0;
-    
-    
-    dlib::svd(m1, ms, mv, md);
-    cout << "=========="<<endl;
-    cout << m1 << endl;
-    cout << ms << endl;
-    cout << mv << endl;
-    cout << md << endl;
-
-    
-    /////////////////////
-    dlib::running_stats<double> rs;
-    
-    double tp1 = 0;
-    double tp2 = 0;
-    
-    // We first generate the data and add it sequentially to our running_stats object.  We
-    // then print every fifth data point.
-    for (int x = 1; x <= 100; x++)
-    {
-        tp1 = x/100.0;
-        tp2 = pi*x == 0 ? 1 : sin(pi * x) / (pi * x);
-        
-        rs.add(tp2);
-    }
-    
-    // Finally, we compute and print the mean, variance, skewness, and excess kurtosis of
-    // our data.
-    
-    cout << endl;
-    cout << "Mean:           " << rs.mean() << endl;
-    cout << "Variance:       " << rs.variance() << endl;
-//    cout << "Skewness:       " << rs.skewness() << endl;
-//    cout << "Excess Kurtosis " << rs.ex_kurtosis() << endl;
-  
-    
-    dlib::vector_normalizer_pca<sample_type> pca1;
-    
-    vector<sample_type> vects;
-    
-    for (int i=0; i<850; i++) {
-        sample_type m2(5);
-        m2(0) = ofRandom(1);
-        m2(1) = m2(0) * (0.35 + ofRandom(-0.05, 0.05));
-        m2(2) = m2(0) * (0.35 + ofRandom(-0.15, 0.15)) + m2(1) * (0.45 + ofRandom(-0.11, 0.19));
-        m2(3) = m2(1) * (0.15 + ofRandom(-0.03, 0.03)) + m2(2) * (0.12 + ofRandom(-0.1, 0.1)) + m2(0) * (0.05 + ofRandom(-0.04, 0.04));
-        m2(4) = ofRandom(1);
-        vects.push_back(m2);
-    }
-
-
-    pca1.train(vects);
-
-    dlib::matrix<double> pca = pca1.pca_matrix();
-    
-    cout << "pca is " << endl;
-    cout << pca << endl;
 }
 
