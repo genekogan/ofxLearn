@@ -10,7 +10,7 @@ void ofApp::setup(){
         instances[i].push_back( ofRandom(-500,500) );
         instances[i].push_back( ofRandom(-500,500) );
         instances[i].push_back( ofRandom(-500,500) );
-        clusterer.addTrainingInstance( instances[i] );
+        clusterer.addSample( instances[i] );
     }
     
     // we tell ofxLearn to assign our NUMPOINTS points into NUMCLUSTERS clusters.

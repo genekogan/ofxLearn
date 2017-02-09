@@ -24,8 +24,8 @@ void ofApp::setup() {
         vector<double> sample;
         sample.push_back(x);
         
-        mlp.addTrainingInstance(sample, y);
-        svr.addTrainingInstance(sample, y);
+        mlp.addSample(sample, y);
+        svr.addSample(sample, y);
         
         trainingExamples.push_back(sample);
         trainingLabels.push_back(y);
@@ -52,7 +52,7 @@ void ofApp::draw() {
     ofSetColor(255, 0, 0, 50);
     for (int i=0; i<trainingExamples.size(); i++) {
         vector<double> trainingExample = trainingExamples[i];
-        ofCircle(ofGetWidth() * trainingExample[0], ofGetHeight() * trainingLabels[i], 5);
+        ofDrawCircle(ofGetWidth() * trainingExample[0], ofGetHeight() * trainingLabels[i], 5);
     }
     
     // predict regression for mouseX

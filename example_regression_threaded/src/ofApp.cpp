@@ -24,8 +24,8 @@ void ofApp::setup() {
         vector<double> sample;
         sample.push_back(x);
         
-        mlp.addTrainingInstance(sample, y);
-        svr.addTrainingInstance(sample, y);
+        mlp.addSample(sample, y);
+        svr.addSample(sample, y);
         
         trainingExamples.push_back(sample);
         trainingLabels.push_back(y);

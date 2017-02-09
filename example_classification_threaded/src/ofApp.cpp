@@ -37,7 +37,7 @@ void ofApp::setup() {
         trainingLabels.push_back(label);
         
         // add sample to our classifier
-        classifier.addTrainingInstance(sample, label);
+        classifier.addSample(sample, label);
     }
     
     // beginTraining() sets trainer off in its own thread, as
