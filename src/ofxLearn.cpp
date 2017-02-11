@@ -271,7 +271,7 @@ double ofxLearnSVM::predict(sample_type & sample) {
     return df(sample);
 }
 
-void ofxLearnSVM::saveModel(string path) {
+void ofxLearnSVM::save(string path) {
     const char *filepath = path.c_str();
     ofstream fout(filepath, ios::binary);
     dlib::one_vs_one_decision_function<ovo_trainer, dlib::decision_function<rbf_kernel_type> > df2, df3;
@@ -279,7 +279,7 @@ void ofxLearnSVM::saveModel(string path) {
     serialize(df2, fout);
 }
 
-void ofxLearnSVM::loadModel(string path) {
+void ofxLearnSVM::load(string path) {
     const char *filepath = path.c_str();
     ifstream fin(filepath, ios::binary);
     dlib::one_vs_one_decision_function<ovo_trainer, dlib::decision_function<rbf_kernel_type> > df2;
@@ -419,6 +419,21 @@ vector<vector<double> > ofxLearnPCA::getProjectedSamples()
     return projectedSamples;
 }
 
+void ofxLearnPCA::save(string path) {
+    const char *filepath = path.c_str();
+    ofstream fout(filepath, ios::binary);
+    dlib::serialize(U, fout);
+    dlib::serialize(E, fout);
+    dlib::serialize(V, fout);
+}
+
+void ofxLearnPCA::load(string path) {
+    const char *filepath = path.c_str();
+    ifstream fin(filepath, ios::binary);
+    dlib::deserialize(U, fin);
+    dlib::deserialize(E, fin);
+    dlib::deserialize(V, fin);
+}
 
 
 //////////////////////////////////////////////////////////////////////

@@ -29,8 +29,8 @@ public:
     ofxLearn() { }
     virtual ~ofxLearn() { }
     virtual void train() { }
-    virtual void saveModel(string path) { }
-    virtual void loadModel(string path) { }
+    virtual void save(string path) { }
+    virtual void load(string path) { }
     inline sample_type vectorToSample(vector<double> sample_);
 };
 
@@ -104,8 +104,8 @@ public:
     void trainWithGridParameterSearch();
     double predict(vector<double> & sample);
     double predict(sample_type & sample);
-    void saveModel(string path);
-    void loadModel(string path);
+    void save(string path);
+    void load(string path);
 private:
     ovo_trainer trainer;
     //dlib::svm_nu_trainer<poly_kernel_type> poly_trainer;
@@ -131,9 +131,10 @@ public:
     void pca(int numComponents);
     vector<double> project(vector<double> sample);
     vector<vector<double> > getProjectedSamples();
+    void save(string path);
+    void load(string path);
+
 protected:
-    
-    
     matrix U, E, V;
 };
 

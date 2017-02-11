@@ -26,6 +26,11 @@ void ofApp::setup(){
     vector<double> newSampleProjected = learn.project(newSample);
     cout << "New sample projected " << ofToString(newSampleProjected) << endl;
 
+    // save PCA results
+    learn.save(ofToDataPath("myPca.dat"));
+    
+    // load PCA back
+    learn.load(ofToDataPath("myPca.dat"));
 }
 
 //--------------------------------------------------------------
