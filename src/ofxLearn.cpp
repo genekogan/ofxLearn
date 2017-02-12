@@ -336,7 +336,7 @@ void ofxLearnPCA::pca(int numComponents)
     int numFeatures = samples[0].size();
     int numSamples = samples.size();
     
-    matrix data;
+    matrix_type data;
     data.set_size(numSamples, numFeatures);
     
     for (int i=0; i<numSamples; i++) {
@@ -356,7 +356,7 @@ void ofxLearnPCA::pca(int numComponents)
     // copy top-numComponents vectors of U, E, and V
     // into smaller Ur, Er, and Vr, then overwrite
     
-    matrix Ur, Er, Vr;
+    matrix_type Ur, Er, Vr;
     
     Ur.set_size(numSamples, numComponents);
     Er.set_size(numComponents, numComponents);
@@ -382,7 +382,7 @@ void ofxLearnPCA::pca(int numComponents)
 
 vector<double> ofxLearnPCA::project(vector<double> sample)
 {
-    matrix p, q;
+    matrix_type p, q;
     p.set_size(1, sample.size());
     for (int i=0; i<sample.size(); i++) {
         p(0, i) = sample[i];
@@ -403,7 +403,7 @@ vector<vector<double> > ofxLearnPCA::getProjectedSamples()
     vector<vector<double> > projectedSamples;
 
     for (int i=0; i<numSamples; i++) {
-        matrix p, q;
+        matrix_type p, q;
         p.set_size(1, numFeatures);
         for (int j=0; j<numFeatures; j++) {
             p(0, j) = samples[i](j);

@@ -12,7 +12,7 @@
 
 // sample type
 typedef dlib::matrix<double, 0, 1>                  sample_type;
-typedef dlib::matrix<double, 0, 0>                  matrix;
+typedef dlib::matrix<double, 0, 0>                  matrix_type;
 
 // kernel types
 typedef dlib::radial_basis_kernel<sample_type>      rbf_kernel_type;
@@ -133,9 +133,14 @@ public:
     vector<vector<double> > getProjectedSamples();
     void save(string path);
     void load(string path);
-
+    void setU(matrix_type U) {this->U=U;}
+    void setE(matrix_type E) {this->E=E;}
+    void setV(matrix_type V) {this->V=V;}
+    matrix_type getU(){return U;}
+    matrix_type getE(){return E;}
+    matrix_type getV(){return V;}
 protected:
-    matrix U, E, V;
+    matrix_type U, E, V;
 };
 
 
