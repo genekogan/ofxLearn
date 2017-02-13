@@ -136,11 +136,14 @@ public:
     void setU(matrix_type U) {this->U=U;}
     void setE(matrix_type E) {this->E=E;}
     void setV(matrix_type V) {this->V=V;}
+    void setColumnMeans(vector<double> column_means){this->column_means=column_means;}
     matrix_type getU(){return U;}
     matrix_type getE(){return E;}
     matrix_type getV(){return V;}
+    vector<double> getColumnMeans(){return column_means;}
 protected:
     matrix_type U, E, V;
+    vector<double> column_means;
 };
 
 

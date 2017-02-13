@@ -335,16 +335,29 @@ void ofxLearnPCA::pca(int numComponents)
     
     int numFeatures = samples[0].size();
     int numSamples = samples.size();
-    
+        
     matrix_type data;
     data.set_size(numSamples, numFeatures);
-    
+
+    // copy all samples into a matrix
     for (int i=0; i<numSamples; i++) {
         for (int j=0; j<numFeatures; j++) {
             data(i, j) = samples[i](j);
         }
     }
     
+    // calculate column means and subtract from data
+    column_means.resize(numFeatures);
+    for (int i=0; i<numFeatures; i++) {
+        column_means[i] = dlib::mean(dlib::colm(data, i));
+        for (int j=0; j<numSamples; j++) {
+            data(j, i) -= column_means[i];
+        }
+    }
+
+    // temporarily erase vector of samples to save memory, push back to them later
+    samples.clear();
+
     // compute singular value decomposition
     dlib::svd(data, U, E, V);
     
@@ -375,9 +388,27 @@ void ofxLearnPCA::pca(int numComponents)
         Er(c, c) = E(idx[c], idx[c]);
     }
     
+    // copy U, E, and V
     U = Ur;
     E = Er;
     V = Vr;
+
+    // erase temp variables
+    Ur.set_size(0, 0);
+    Er.set_size(0, 0);
+    Vr.set_size(0, 0);
+    
+    // copy samples back to vector
+    for (int i=0; i<numSamples; i++) {
+        sample_type sample(numFeatures);
+        for (int j=0; j<numFeatures; j++) {
+            sample(j) = data(i, j) + column_means[j];
+        }
+        samples.push_back(sample);
+    }
+
+    // erase temp matrix
+    data.set_size(0, 0);
 }
 
 vector<double> ofxLearnPCA::project(vector<double> sample)
@@ -385,7 +416,7 @@ vector<double> ofxLearnPCA::project(vector<double> sample)
     matrix_type p, q;
     p.set_size(1, sample.size());
     for (int i=0; i<sample.size(); i++) {
-        p(0, i) = sample[i];
+        p(0, i) = sample[i] - column_means[i];
     }
     //q = (p * dlib::inv(E) * V);
     q = (p * V);
@@ -425,6 +456,7 @@ void ofxLearnPCA::save(string path) {
     dlib::serialize(U, fout);
     dlib::serialize(E, fout);
     dlib::serialize(V, fout);
+    dlib::serialize(column_means, fout);
 }
 
 void ofxLearnPCA::load(string path) {
@@ -433,6 +465,7 @@ void ofxLearnPCA::load(string path) {
     dlib::deserialize(U, fin);
     dlib::deserialize(E, fin);
     dlib::deserialize(V, fin);
+    dlib::deserialize(column_means, fin);
 }
 
 
