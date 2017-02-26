@@ -314,7 +314,6 @@ void ofxLearnKMeans::train()
     for (int i = 0; i < samples.size(); ++i) {
         clusters.push_back(kmeans(samples[i]));
     }
-    return clusters;
 }
 
 
