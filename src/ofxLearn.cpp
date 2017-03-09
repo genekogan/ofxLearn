@@ -125,13 +125,89 @@ void ofxLearnMLP::train()
 
 double ofxLearnMLP::predict(vector<double> & sample)
 {
-    return (*mlp_trainer)(vectorToSample(sample));
+    sample_type samp(vectorToSample(sample));
+    return predict(samp);
 }
 
 double ofxLearnMLP::predict(sample_type & sample)
 {
     double theValue = (*mlp_trainer)(sample);
+    cout << "pred 1 ST = " <<theValue << endl;
+
     return theValue;
+}
+
+
+double ofxLearnMLP::predict2(vector<double> & sample)
+{
+
+    sample_type samp(vectorToSample(sample));
+    return predict2(samp);
+}
+
+double sigmoid(double x) {
+    return 1.0 / (1.0 + exp(-x));
+}
+
+double ofxLearnMLP::predict2(sample_type & sample)
+{
+    int numFeatures = samples[0].size();
+    int numLayers = getHiddenLayers();
+    vector<double> w1, w3;
+    
+    w1.clear();
+    w3.clear();
+    
+    dlib::matrix<double> w1m = mlp_trainer->get_w1();
+    dlib::matrix<double> w3m = mlp_trainer->get_w3();
+    
+    for (int i=0; i<numLayers+1; i++) {
+        for (int j = 0; j < numFeatures + 1; j++) {
+            w1.push_back(w1m(i, j));
+        }
+    }
+    for (int i=0; i<numLayers+1; i++) {
+        w3.push_back(w3m(i));
+    }
+    
+    
+    
+    
+    
+    
+    vector<double> z;
+    for (int f=0; f<numFeatures; f++) {
+        z.push_back((double) sample(f));
+    }
+    z.push_back(-1.0);
+    
+    vector<double> tmp1;
+    for (int i=0; i<numLayers+1; i++) {
+        float tmp0 = 0.0;
+        for (int j=0; j<numFeatures+1; j++) {
+            tmp0 += (w1[i*(numFeatures+1) + j] * z[j]);
+        }
+        tmp1.push_back(sigmoid(tmp0));
+    }
+    tmp1[numLayers] = -1.0;
+    
+    float tmp2 = 0.0;
+    for (int j=0; j<numLayers+1; j++) {
+        tmp2 += (w3[j] * tmp1[j]);
+    }
+    
+    cout << "pred 2 MANUAL = " <<sigmoid(tmp2)<< endl;
+    
+    //*output->parameter = ofMap(sigmoid(tmp2), 0, 1, output->getMin(), output->getMax());
+    return sigmoid(tmp2);
+
+    
+    
+    
+    
+    
+    
+
 }
 
 
@@ -436,7 +512,7 @@ vector<vector<double> > ofxLearnPCA::getProjectedSamples()
         matrix_type p, q;
         p.set_size(1, numFeatures);
         for (int j=0; j<numFeatures; j++) {
-            p(0, j) = samples[i](j);
+            p(0, j) = samples[i](j) - column_means[j];
         }
         //q = (p * dlib::inv(E) * V);
         q = (p * V);
@@ -463,6 +539,133 @@ void ofxLearnPCA::load(string path) {
     ifstream fin(filepath, ios::binary);
     dlib::deserialize(U, fin);
     dlib::deserialize(E, fin);
+    dlib::deserialize(V, fin);
+    dlib::deserialize(column_means, fin);
+}
+
+
+
+//////////////////////////////////////////////////////////////////////
+////  Random projection (instead of PCA)
+
+ofxLearnRandomProjection::ofxLearnRandomProjection() : ofxLearnUnsupervised()
+{
+    
+}
+
+void ofxLearnRandomProjection::randomProjection(int numComponents)
+{
+    if (samples.size() == 0) {
+        ofLog(OF_LOG_ERROR, "No samples added yet");
+        return;
+    }
+    
+    int numFeatures = samples[0].size();
+    int numSamples = samples.size();
+    
+    matrix_type data;
+    data.set_size(numSamples, numFeatures);
+    
+    // copy all samples into a matrix
+    for (int i=0; i<numSamples; i++) {
+        for (int j=0; j<numFeatures; j++) {
+            data(i, j) = samples[i](j);
+        }
+    }
+    
+    // calculate column means and subtract from data
+    column_means.resize(numFeatures);
+    for (int i=0; i<numFeatures; i++) {
+        column_means[i] = dlib::mean(dlib::colm(data, i));
+        for (int j=0; j<numSamples; j++) {
+            data(j, i) -= column_means[i];
+        }
+    }
+    
+    // temporarily erase vector of samples to save memory, push back to them later
+    samples.clear();
+    
+    // make random matrix
+    vector<double> column_lengths(numComponents);
+    V.set_size(numFeatures, numComponents);
+    for (int i=0; i<numComponents; i++) {
+        column_lengths[i] = 0.0;
+        for (int j=0; j<numFeatures; j++) {
+            V(j, i) = ofRandom(1);
+            column_lengths[i] += V(j, i) * V(j, i);
+        }
+        column_lengths[i] = sqrt(column_lengths[i]);
+    }
+    
+    // make columns of V have unit distance
+    for (int i=0; i<numComponents; i++) {
+        for (int j=0; j<numFeatures; j++) {
+            V(j, i) = V(j, i) / column_lengths[i];
+        }
+    }
+    
+    // copy samples back to vector
+    for (int i=0; i<numSamples; i++) {
+        sample_type sample(numFeatures);
+        for (int j=0; j<numFeatures; j++) {
+            sample(j) = data(i, j) + column_means[j];
+        }
+        samples.push_back(sample);
+    }
+
+    // erase temp matrix
+    data.set_size(0, 0);
+}
+
+vector<double> ofxLearnRandomProjection::project(vector<double> sample)
+{
+    matrix_type p, q;
+    p.set_size(1, sample.size());
+    for (int i=0; i<sample.size(); i++) {
+        p(0, i) = sample[i] - column_means[i];
+    }
+    //q = (p * dlib::inv(E) * V);
+    q = (p * V);
+    vector<double> projectedSample;
+    for (int i=0; i<q.nc(); i++) {
+        projectedSample.push_back(q(0, i));
+    }
+    return projectedSample;
+}
+
+vector<vector<double> > ofxLearnRandomProjection::getProjectedSamples()
+{
+    int numFeatures = samples[0].size();
+    int numSamples = samples.size();
+    vector<vector<double> > projectedSamples;
+    
+    for (int i=0; i<numSamples; i++) {
+        matrix_type p, q;
+        p.set_size(1, numFeatures);
+        for (int j=0; j<numFeatures; j++) {
+            p(0, j) = samples[i](j) - column_means[j];
+        }
+        //q = (p * dlib::inv(E) * V);
+        q = (p * V);
+        vector<double> projectedSample;
+        for (int i=0; i<q.nc(); i++) {
+            projectedSample.push_back(q(0, i));
+        }
+        projectedSamples.push_back(projectedSample);
+    }
+    return projectedSamples;
+}
+
+void ofxLearnRandomProjection::save(string path) {
+    const char *filepath = path.c_str();
+    ofstream fout(filepath, ios::binary);
+    dlib::serialize(V, fout);
+    dlib::serialize(column_means, fout);
+}
+
+void ofxLearnRandomProjection::load(string path) {
+    const char *filepath = path.c_str();
+    ifstream fin(filepath, ios::binary);
     dlib::deserialize(V, fin);
     dlib::deserialize(column_means, fin);
 }

@@ -22,4 +22,5 @@ class ofApp : public ofBaseApp{
 		
     
     ofxLearnPCA learn;
+    ofxLearnRandomProjection rp;
 };

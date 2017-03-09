@@ -31,6 +31,41 @@ void ofApp::setup(){
     
     // load PCA back
     learn.load(ofToDataPath("myPca.dat"));
+
+    
+    // Somtimes, it's better to reduce the dimensionality of your dataset by
+    // simply multiplying it by a random matrix with as many columns as components
+    // you want to keep. This might reconstruct the dataset more poorly than PCA, but
+    // when dimensionality is high to begin with, the difference is very small and the
+    // random projection is orders of magnitude faster than PCA.
+    
+    rp.addSample(vector<double>{1, 0.5, 3, 1, 5});
+    rp.addSample(vector<double>{2, 0.7, 3.3, 0.9, 4.2});
+    rp.addSample(vector<double>{1, 4, -0.4, 9, 3.2});
+    rp.addSample(vector<double>{1.5, 5.2, 0.1, 8, 2.6});
+    rp.addSample(vector<double>{0.2, -0.5, 0.3, -1.2, 7.4});
+    rp.addSample(vector<double>{0.2, -0.5, 0.31, -1.2, 7.3});
+    rp.addSample(vector<double>{9, 8, 6, 3, -1.0});
+
+    rp.randomProjection(3);
+    
+    // Get original dataset projected onto principal components
+    vector<vector<double> > projectedSamples2 = rp.getProjectedSamples();
+    for (int i=0; i<projectedSamples2.size(); i++) {
+        cout << "Dataset sample " << i << " projected: " << ofToString(projectedSamples2[i]) << endl;
+    }
+    
+    // Project a new point onto the principal components
+    vector<double> newSample2 = {5, 4, 1, -2, 3.2};
+    vector<double> newSampleProjected2 = rp.project(newSample2);
+    cout << "New sample projected " << ofToString(newSampleProjected2) << endl;
+
+    // save random projection results
+    learn.save(ofToDataPath("myRp.dat"));
+    
+    // load random projection back
+    learn.load(ofToDataPath("myRp.dat"));
+
 }
 
 //--------------------------------------------------------------

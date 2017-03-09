@@ -65,6 +65,14 @@ public:
     void train();
     double predict(vector<double> & sample);
     double predict(sample_type & sample);
+
+    
+    ////
+    double predict2(vector<double> & sample);
+    double predict2(sample_type & sample);
+    //////
+    
+    
     void setHiddenLayers(int hiddenLayers) {this->hiddenLayers = hiddenLayers;}
     void setTargetRmse(float targetRmse) {this->targetRmse = targetRmse;}
     void setMaxSamples(int maxSamples) {this->maxSamples = maxSamples;}
@@ -143,6 +151,23 @@ public:
     vector<double> getColumnMeans(){return column_means;}
 protected:
     matrix_type U, E, V;
+    vector<double> column_means;
+};
+
+class ofxLearnRandomProjection : public ofxLearnUnsupervised {
+public:
+    ofxLearnRandomProjection();
+    void randomProjection(int numComponents);
+    vector<double> project(vector<double> sample);
+    vector<vector<double> > getProjectedSamples();
+    void save(string path);
+    void load(string path);
+    void setV(matrix_type V) {this->V=V;}
+    void setColumnMeans(vector<double> column_means){this->column_means=column_means;}
+    matrix_type getV(){return V;}
+    vector<double> getColumnMeans(){return column_means;}
+protected:
+    matrix_type V;
     vector<double> column_means;
 };
 

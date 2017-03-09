@@ -64,14 +64,14 @@ void ofApp::draw() {
     double mlpPrediction = mlp.predict(sample);
     
     ofSetColor(0, 255, 0, 150);
-    ofCircle(ofGetWidth() * x, ofGetHeight() * mlpPrediction, 20);
+    ofDrawCircle(ofGetWidth() * x, ofGetHeight() * mlpPrediction, 30);
     ofSetColor(0);
     ofDrawBitmapString("MLP", ofGetWidth() * x, ofGetHeight() * mlpPrediction);
     
-    double svrPrediction = svr.predict(sample);
+    double svrPrediction = mlp.predict2(sample);//svr.predict(sample);
     
     ofSetColor(0, 0, 255, 150);
-    ofCircle(ofGetWidth() * x, ofGetHeight() * svrPrediction, 20);
+    ofDrawCircle(ofGetWidth() * x, ofGetHeight() * svrPrediction, 20);
     ofSetColor(0);
     ofDrawBitmapString("SVR", ofGetWidth() * x, ofGetHeight() * svrPrediction);
 }
